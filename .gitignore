@@ -1,0 +1,35 @@
+# --- Dataset & Hasil Eksperimen ---
+model/data/*
+model/saved_models/*
+
+# --- Database Runtime Lokal ---
+database/
+*.db
+*.sqlite3
+
+# --- Tools ---
+tools/data/*
+
+# --- Virtual Environments ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Cache Python & Streamlit ---
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+.streamlit/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Konfigurasi IDE & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# --- CI/CD Pull from Git ---
+.cicd/cicd.log

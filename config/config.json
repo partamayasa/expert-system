@@ -1,0 +1,6 @@
+{
+  "ai_generator": {
+    "min_similarity_threshold": 0.01,
+    "max_reference_fallback": 2
+  }
+}
