@@ -6,13 +6,12 @@ import pickle
 import random
 import sqlite3
 import time
-# Tambahkan flash ke dalam komponen import Werkzeug/Flask
 from flask import Flask, Response, redirect, render_template, request, url_for, flash
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- Konfigurasi Jalur File Dinamis Berbasis Struktur Baru ---
+# Konfigurasi Jalur File Dinamis Berbasis Struktur Baru
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Lokasi folder 'model/'
 
 DB_PATH = os.path.join(BASE_DIR, "data", "experts.db")
@@ -27,7 +26,6 @@ TEMPLATE_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "templates"))
 app = Flask(__name__, template_folder=TEMPLATE_DIR)
 app.secret_key = "kunci_rahasia_sistem_pakar"  # Ditambahkan untuk mendukung session flash message
 
-
 def load_indonesian_stopwords():
     """
     Membaca daftar kata umum (stopwords) bahasa Indonesia dari berkas JSON eksternal.
@@ -37,15 +35,13 @@ def load_indonesian_stopwords():
             return json.load(f)
     return []
 
-
 # Muat daftar kata umum ke dalam variabel global aplikasi
 INDONESIAN_STOPWORDS = load_indonesian_stopwords()
 
-
-# --- 1. Inisialisasi database ---
+# Inisialisasi database
 def init_db():
     """
-    Membuat tabel database SQLite jika belum tersedia di dalam sistem.
+    Make tabel database SQLite jika belum tersedia di dalam sistem.
     """
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
@@ -65,11 +61,9 @@ def init_db():
     conn.commit()
     conn.close()
 
-
 init_db()
 
-
-# --- 2. Pipeline pelatihan ulang model ai ---
+# Pipeline pelatihan ulang model ai
 def retrain_tfidf_model():
     """
     Melatih ulang model TF-IDF secara terpusat berdasarkan data kompetensi terbaru dari database.
@@ -92,8 +86,7 @@ def retrain_tfidf_model():
     with open(MATRIX_PATH, "wb") as f:
         pickle.dump(new_tfidf_matrix, f)
 
-
-# --- 3. Muat sumber daya ke memori ---
+# Muat sumber daya ke memori
 def load_resources():
     """
     Memuat kembali model TF-IDF, matriks bobot teks, dan seluruh data pakar ke dalam memori aplikasi.
@@ -128,15 +121,13 @@ def load_resources():
     )
     conn.close()
 
-
 try:
     load_resources()
 except Exception:
     retrain_tfidf_model()
     load_resources()
 
-
-# --- Engine AI Generator Deskripsi (Dinamis Berbasis TF-IDF & JSON) ---
+# Engine AI Generator Deskripsi (Dinamis Berbasis TF-IDF & JSON)
 def ai_description_generator(department, keywords):
     """
     Menghasilkan teks narasi deskripsi keahlian secara dinamis menggunakan model TF-IDF 
@@ -191,7 +182,6 @@ def ai_description_generator(department, keywords):
     ]
     return random.choice(fallback_templates)
 
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     """
@@ -242,14 +232,12 @@ def index():
         experts=df_current.to_dict(orient="records") if not df_current.empty else [],
     )
 
-
 @app.route("/generate-ai", methods=["POST"])
 def generate_ai():
     department = request.form.get('divisi')
     keywords = request.form.get('keywords')
     generated_text = ai_description_generator(department, keywords)
     return {"status": "success", "text": generated_text}
-
 
 @app.route("/add-expert", methods=["POST"])
 def add_expert():
@@ -282,7 +270,6 @@ def add_expert():
 
     return redirect(url_for("index") + "?tab=manage")
 
-
 @app.route("/edit-expert/<expert_id>", methods=["POST"])
 def edit_expert(expert_id):
     name = request.form.get("name", "").strip()
@@ -308,7 +295,6 @@ def edit_expert(expert_id):
 
     return redirect(url_for("index") + "?tab=manage")
 
-
 @app.route("/delete-expert/<expert_id>", methods=["GET", "POST"])
 def delete_expert(expert_id):
     conn = sqlite3.connect(DB_PATH)
@@ -322,7 +308,6 @@ def delete_expert(expert_id):
 
     return redirect(url_for("index") + "?tab=manage")
 
-
 @app.route("/download-template", methods=["GET"])
 def download_template():
     output = io.StringIO()
@@ -333,7 +318,6 @@ def download_template():
     response = Response(output.getvalue(), mimetype="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=template_pakar_baru.csv"
     return response
-
 
 @app.route("/import-csv", methods=["POST"])
 def import_csv():
@@ -389,7 +373,6 @@ def import_csv():
             return f"Terjadi kesalahan saat memproses data CSV: {str(e)}", 500
 
     return redirect(url_for("index") + "?tab=manage")
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

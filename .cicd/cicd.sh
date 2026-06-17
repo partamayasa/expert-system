@@ -18,5 +18,5 @@ if [ "$OLD_COMMIT" != "$NEW_COMMIT" ]; then
     echo "$(date): New code detected; initiating server update" >> /home/expert-system/.cicd/cicd.log
 
     # Restart service agar perubahan langsung aktif
-    sudo systemctl restart cvss-app.service
+    sudo systemctl restart expert-system.service
 fi
