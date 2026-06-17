@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body class="bg-gray-50 min-h-screen font-sans">
 
     <div class="container mx-auto px-4 py-8 max-w-5xl">
@@ -16,18 +18,26 @@
         </div>
 
         <div class="flex justify-center space-x-4 mb-8 border-b border-gray-200">
-            <button id="tab-search-btn" onclick="switchTab('search')" class="py-2 px-6 font-semibold border-b-2 text-blue-600 border-blue-600">Cari Ahli</button>
-            <button id="tab-manage-btn" onclick="switchTab('manage')" class="py-2 px-6 font-semibold border-b-2 text-gray-500 border-transparent hover:text-blue-600">Kelola Pakar (Database)</button>
+            <button id="tab-search-btn" onclick="switchTab('search')"
+                class="py-2 px-6 font-semibold border-b-2 text-blue-600 border-blue-600">Cari Ahli</button>
+            <button id="tab-manage-btn" onclick="switchTab('manage')"
+                class="py-2 px-6 font-semibold border-b-2 text-gray-500 border-transparent hover:text-blue-600">Kelola
+                Pakar (Database)</button>
         </div>
 
         <div id="tab-search" class="block">
             <div class="bg-white p-6 rounded-xl shadow-md mb-8">
                 <form method="POST" action="/">
                     <input type="hidden" name="search_submit" value="1">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Apa kendala atau kebutuhan kompetensi yang Anda cari?</label>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Apa kendala atau kebutuhan kompetensi yang
+                        Anda cari?</label>
                     <div class="flex gap-3">
-                        <input type="text" name="query" value="{{ query }}" placeholder="Contoh: saya ada kendala pada koneksi internet wifi kantor lambat..." class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition">Cari Pakar</button>
+                        <input type="text" name="query" value="{{ query }}"
+                            placeholder="Contoh: Saya ada kendala pada koneksi internet wifi kantor lambat"
+                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition">Cari
+                            Pakar</button>
                     </div>
                 </form>
             </div>
@@ -36,22 +46,42 @@
             <div class="mb-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Hasil Rekomendasi Ahli Terkait</h2>
                 {% if recommendations %}
+                {% set max_score = recommendations[0]['Score'] %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for item in recommendations %}
-                    <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between overflow-hidden">
+                    {% set is_best = (item['Score'] == max_score) %}
+                    <div
+                        class="{% if is_best %}border-blue-500 border-2 shadow-md ring-4 ring-blue-50 bg-gradient-to-b from-blue-50/20 to-white{% else %}bg-white border border-gray-200 shadow-sm{% endif %} rounded-xl hover:shadow-md transition duration-200 flex flex-col justify-between overflow-hidden relative">
+                        {% if is_best %}
+                        <div
+                            class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center text-[11px] font-extrabold py-1.5 px-3 uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm">
+                            Rekomendasi Terbaik
+                        </div>
+                        {% endif %}
                         <div class="p-5">
                             <div class="flex justify-between items-start gap-2 mb-3">
-                                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded border border-blue-100 uppercase tracking-wider">{{ item['Department'] }}</span>
-                                <span class="text-xs font-bold text-green-700 bg-green-50 border border-green-100 px-2 py-1 rounded-full whitespace-nowrap">Skor: {{ (item['Score'] * 100) | round(1) }}%</span>
+                                <span
+                                    class="{% if is_best %}bg-blue-100 text-blue-800 border-blue-200{% else %}bg-blue-50 text-blue-700 border-blue-100{% endif %} text-xs font-semibold px-2.5 py-1 rounded border uppercase tracking-wider">{{
+                                    item['Department'] }}</span>
+                                <span
+                                    class="text-xs font-bold {% if is_best %}text-blue-800 bg-blue-100 border-blue-200{% else %}text-green-700 bg-green-50 border-green-100{% endif %} px-2 py-1 rounded-full whitespace-nowrap">Skor:
+                                    {{ (item['Score'] * 100) | round(1) }}%</span>
                             </div>
-                            <h3 class="text-lg font-bold text-gray-900 line-clamp-1 mb-1" title="{{ item['Name'] }}">{{ item['Name'] }}</h3>
+                            <h3 class="text-lg font-bold text-gray-900 line-clamp-1 mb-1" title="{{ item['Name'] }}">{{
+                                item['Name'] }}</h3>
                             <p class="text-xs text-gray-500">{{ item['Email'] }}</p>
                         </div>
-                        <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end">
-                            <button type="button" 
-                                    onclick="openDetailModal('{{ item['Name'] | replace('\'', '\\\'') }}', '{{ item['Department'] | replace('\'', '\\\'') }}', '{{ item['Email'] | replace('\'', '\\\'') }}', '{{ (item['Score'] * 100) | round(1) }}%', '{{ item['Description'] | replace('\'', '\\\'') | replace('\n', ' ') | replace('\r', '') }}')" 
-                                    class="text-blue-600 hover:text-blue-800 text-xs font-bold transition">
-                                Lihat Detail &rarr;
+                        <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                            <a href="mailto:{{ item['Email'] }}"
+                                class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded transition shadow-sm">
+                                Hubungi
+                            </a>
+                            <button type="button"
+                                class="detail-btn text-blue-600 hover:text-blue-800 text-xs font-bold transition"
+                                data-name="{{ item['Name'] }}" data-department="{{ item['Department'] }}"
+                                data-email="{{ item['Email'] }}" data-score="{{ (item['Score'] * 100) | round(1) }}%"
+                                data-description="{{ item['Description'] }}">
+                                Lihat Detail
                             </button>
                         </div>
                     </div>
@@ -59,7 +89,8 @@
                 </div>
                 {% else %}
                 <div class="bg-white p-6 rounded-xl shadow-md text-center">
-                    <p class="text-gray-500 italic">Tidak ada ahli yang cocok dengan kata kunci tersebut. Coba perkaya kata kunci Anda.</p>
+                    <p class="text-gray-500 italic">Tidak ada ahli yang cocok dengan kata kunci tersebut. Coba perkaya
+                        kata kunci Anda.</p>
                 </div>
                 {% endif %}
             </div>
@@ -67,24 +98,38 @@
         </div>
 
         <div id="tab-manage" class="hidden space-y-8">
+            <!-- Ringkasan Statistik Database Pakar (Compact) -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl py-3 px-4 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span class="text-xs font-semibold text-blue-800">Status Database Pakar:</span>
+                    <span class="text-xs font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded-md">{{ experts | length }} Pakar Terdaftar</span>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white p-6 rounded-xl shadow-md md:col-span-2">
                     <h2 class="text-xl font-bold text-gray-800 mb-4">Tambah Anggota Pakar</h2>
-                    <form method="POST" action="/add-expert" class="space-y-4">
+                    <form id="add-expert-form" method="POST" action="/add-expert" class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-gray-700 text-xs font-bold mb-1">Nama Lengkap & Gelar</label>
-                                <input type="text" name="name" required placeholder="Contoh: Prof. Andi" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="text" name="name" required placeholder="Contoh: Prof. Andi"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-xs font-bold mb-1">Alamat Email Resmi</label>
-                                <input type="email" name="email" required placeholder="andi@company.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="email" name="email" required placeholder="andi@company.com"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             </div>
                         </div>
-                        
+
                         <div>
                             <label class="block text-gray-700 text-xs font-bold mb-1">Divisi / Kompetensi</label>
-                            <select name="department" id="form-department" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <select name="department" id="form-department"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <option value="Teknologi">Teknologi</option>
                                 <option value="Administrasi">Administrasi</option>
                                 <option value="Manajemen Risiko">Manajemen Risiko</option>
@@ -97,41 +142,55 @@
                         </div>
 
                         <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                            <label class="block text-blue-900 text-xs font-bold mb-1">Fitur AI Generator Deskripsi Keahlian</label>
+                            <label class="block text-blue-900 text-xs font-bold mb-1">Fitur AI Generator Deskripsi
+                                Keahlian</label>
                             <div class="flex gap-2 mb-2">
-                                <input type="text" id="ai-keywords" placeholder="Contoh keywords: wifi, error mac, internet lambat" class="flex-1 px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400">
-                                <button type="button" onclick="triggerAIGenerator()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition shrink-0">Generate Deskripsi</button>
+                                <input type="text" id="ai-keywords"
+                                    placeholder="Contoh keywords: wifi, error mac, internet lambat"
+                                    class="flex-1 px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400">
+                                <button type="button" onclick="triggerAIGenerator()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition shrink-0">Generate
+                                    Deskripsi</button>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-gray-700 text-xs font-bold mb-1">Deskripsi Narasi Keahlian (Hasil Akhir)</label>
-                            <textarea name="description" id="form-description" rows="3" required placeholder="Tulis deskripsi keahlian di sini..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                            <label class="block text-gray-700 text-xs font-bold mb-1">Deskripsi Narasi Keahlian (Hasil
+                                Akhir)</label>
+                            <textarea name="description" id="form-description" rows="3" required
+                                placeholder="Tulis deskripsi keahlian di sini..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
                         </div>
 
-                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg transition text-sm shadow">Simpan Pakar Manual</button>
+                        <button type="submit"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg transition text-sm shadow">Simpan
+                            Pakar Manual</button>
                     </form>
                 </div>
 
                 <div class="bg-white p-6 rounded-xl shadow-md flex flex-col justify-between">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800 mb-2">Import CSV Massal</h2>
-                        <p class="text-gray-500 text-xs mb-4 leading-relaxed">Masukkan banyak pakar sekaligus melalui file excel/CSV. Sistem akan meng-generate ID otomatis.</p>
-                        
+                        <p class="text-gray-500 text-xs mb-4 leading-relaxed">Masukkan banyak pakar sekaligus melalui
+                            file excel/CSV. Sistem akan meng-generate ID otomatis.</p>
+
                         <div class="mb-5 bg-gray-50 p-3 rounded-lg border border-dashed border-gray-300 text-center">
                             <p class="text-xs text-gray-600 mb-2 font-medium">Belum punya formatnya?</p>
-                            <a href="/download-template" class="inline-block bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-bold px-4 py-2 rounded-lg transition">
+                            <a href="/download-template"
+                                class="inline-block bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-bold px-4 py-2 rounded-lg transition">
                                 Download Template CSV
                             </a>
                         </div>
                     </div>
 
-                    <form method="POST" action="/import-csv" enctype="multipart/form-data" class="space-y-3">
+                    <form id="import-csv-form" method="POST" action="/import-csv" enctype="multipart/form-data" class="space-y-3">
                         <div>
                             <label class="block text-gray-700 text-xs font-bold mb-1">Pilih File CSV Anda</label>
-                            <input type="file" name="file_csv" accept=".csv" required class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                            <input type="file" name="file_csv" accept=".csv" required
+                                class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition text-sm shadow">
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition text-sm shadow">
                             Jalankan Import & Retrain AI
                         </button>
                     </form>
@@ -139,7 +198,19 @@
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-md overflow-x-auto">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Database Anggota Pakar Aktif</h2>
+                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                    <h2 class="text-xl font-bold text-gray-800">Database Anggota Pakar Aktif</h2>
+                    <div class="flex items-center gap-3">
+                        <span class="bg-blue-50 text-blue-700 text-xs font-extrabold px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
+                            Total: {{ experts | length }} Pakar
+                        </span>
+                        {% if experts %}
+                        <button type="button" id="delete-all-btn" class="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition shadow-sm text-xs">
+                            Hapus Semua Pakar
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
                 <table class="w-full text-sm text-left text-gray-500">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                         <tr>
@@ -155,18 +226,22 @@
                         <tr class="border-b hover:bg-gray-50">
                             <td class="px-4 py-3 font-mono text-xs text-blue-600">{{ item['ID'] }}</td>
                             <td class="px-4 py-3 font-bold text-gray-900">{{ item['Name'] }}</td>
-                            <td class="px-4 py-3 text-xs"><span class="bg-gray-200 text-gray-800 px-2 py-0.5 rounded">{{ item['Department'] }}</span></td>
-                            <td class="px-4 py-3 text-xs truncate max-w-xs" title="{{ item['Description'] }}">{{ item['Description'] }}</td>
+                            <td class="px-4 py-3 text-xs"><span class="bg-gray-200 text-gray-800 px-2 py-0.5 rounded">{{
+                                    item['Department'] }}</span></td>
+                            <td class="px-4 py-3 text-xs truncate max-w-xs" title="{{ item['Description'] }}">{{
+                                item['Description'] }}</td>
                             <td class="px-4 py-3 text-xs text-center space-x-2 whitespace-nowrap">
-                                <button type="button" 
-                                        onclick="openEditModal('{{ item['ID'] }}', '{{ item['Name'] | replace('\'', '\\\'') }}', '{{ item['Email'] | replace('\'', '\\\'') }}', '{{ item['Department'] }}', '{{ item['Description'] | replace('\'', '\\\'') | replace('\n', ' ') }}')"
-                                        class="bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-3 py-1.5 rounded-lg border border-amber-200 transition shadow-sm">
+                                <button type="button"
+                                    class="edit-btn bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-3 py-1.5 rounded-lg border border-amber-200 transition shadow-sm"
+                                    data-id="{{ item['ID'] }}" data-name="{{ item['Name'] }}"
+                                    data-email="{{ item['Email'] }}" data-department="{{ item['Department'] }}"
+                                    data-description="{{ item['Description'] }}">
                                     Edit
                                 </button>
-                                
+
                                 <button type="button"
-                                        onclick="triggerDeleteConfirmation('{{ item['ID'] }}', '{{ item['Name'] | replace('\'', '\\\'') }}')"
-                                        class="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition shadow-sm">
+                                    class="delete-btn bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition shadow-sm"
+                                    data-id="{{ item['ID'] }}" data-name="{{ item['Name'] }}">
                                     Hapus
                                 </button>
                             </td>
@@ -176,13 +251,21 @@
                 </table>
             </div>
         </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-12 py-6 border-t border-gray-200 text-gray-500 text-xs">
+            <p>&copy; <script>document.write(new Date().getFullYear())</script> Expert Recommendation System. All rights reserved.</p>
+        </footer>
     </div>
 
-    <div id="detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden transform transition-all scale-95 opacity-0 duration-200" id="modal-content">
+    <div id="detail-modal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden transform transition-all scale-95 opacity-0 duration-200"
+            id="modal-content">
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
                 <h3 class="text-lg font-bold text-gray-900">Profil Detail Anggota Pakar</h3>
-                <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600 text-xl font-semibold focus:outline-none">&times;</button>
+                <button onclick="closeDetailModal()"
+                    class="text-gray-400 hover:text-gray-600 text-xl font-semibold focus:outline-none">&times;</button>
             </div>
             <div class="p-6 space-y-4">
                 <div>
@@ -195,7 +278,8 @@
                         <p id="modal-department" class="text-sm font-semibold text-gray-800 mt-0.5"></p>
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Akurasi Kemiripan</label>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Akurasi
+                            Kemiripan</label>
                         <p id="modal-score" class="text-sm font-bold text-green-700 mt-0.5"></p>
                     </div>
                 </div>
@@ -204,35 +288,45 @@
                     <p id="modal-email" class="text-sm text-gray-800 font-mono mt-0.5"></p>
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Narasi Keahlian Lengkap</label>
-                    <div class="mt-1 bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm text-gray-700 leading-relaxed italic" id="modal-description"></div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Narasi Keahlian
+                        Lengkap</label>
+                    <div class="mt-1 bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm text-gray-700 leading-relaxed italic"
+                        id="modal-description"></div>
                 </div>
             </div>
             <div class="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex justify-end">
-                <button onclick="closeDetailModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2 rounded-lg transition shadow-sm">Tutup Detail</button>
+                <button onclick="closeDetailModal()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2 rounded-lg transition shadow-sm">Tutup
+                    Detail</button>
             </div>
         </div>
     </div>
 
-    <div id="edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden transform transition-all scale-95 opacity-0 duration-200" id="edit-modal-content">
+    <div id="edit-modal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden transform transition-all scale-95 opacity-0 duration-200"
+            id="edit-modal-content">
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
                 <h3 class="text-lg font-bold text-gray-900">Ubah Data Anggota Pakar</h3>
-                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-xl font-semibold focus:outline-none">&times;</button>
+                <button onclick="closeEditModal()"
+                    class="text-gray-400 hover:text-gray-600 text-xl font-semibold focus:outline-none">&times;</button>
             </div>
             <form id="edit-form" method="POST" action="">
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-gray-700 text-xs font-bold mb-1">Nama Lengkap & Gelar</label>
-                        <input type="text" id="edit-name" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <input type="text" id="edit-name" name="name" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                     </div>
                     <div>
                         <label class="block text-gray-700 text-xs font-bold mb-1">Alamat Email Resmi</label>
-                        <input type="email" id="edit-email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <input type="email" id="edit-email" name="email" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                     </div>
                     <div>
                         <label class="block text-gray-700 text-xs font-bold mb-1">Divisi / Kompetensi</label>
-                        <select id="edit-department" name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <select id="edit-department" name="department"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <option value="Teknologi">Teknologi</option>
                             <option value="Administrasi">Administrasi</option>
                             <option value="Manajemen Risiko">Manajemen Risiko</option>
@@ -245,12 +339,16 @@
                     </div>
                     <div>
                         <label class="block text-gray-700 text-xs font-bold mb-1">Deskripsi Narasi Keahlian</label>
-                        <textarea id="edit-description" name="description" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                        <textarea id="edit-description" name="description" rows="4" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
                     </div>
                 </div>
                 <div class="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex justify-end space-x-2">
-                    <button type="button" onclick="closeEditModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs px-4 py-2 rounded-lg transition">Batal</button>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2 rounded-lg transition shadow-sm">Simpan Perubahan</button>
+                    <button type="button" onclick="closeEditModal()"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs px-4 py-2 rounded-lg transition">Batal</button>
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2 rounded-lg transition shadow-sm">Simpan
+                        Perubahan</button>
                 </div>
             </form>
         </div>
@@ -279,7 +377,7 @@
         function triggerAIGenerator() {
             const selectedDepartment = document.getElementById('form-department').value;
             const inputKeywords = document.getElementById('ai-keywords').value;
-            
+
             if (inputKeywords.trim() === "") {
                 alert("Masukkan minimal satu atau dua kata kunci terlebih dahulu!");
                 return;
@@ -293,13 +391,13 @@
                 method: 'POST',
                 body: requestForm
             })
-            .then(response => response.json())
-            .then(responseData => {
-                if (responseData.status === 'success') {
-                    document.getElementById('form-description').value = responseData.text;
-                }
-            })
-            .catch(errorLog => console.error('Gagal memproses pembuatan deskripsi otomatis:', errorLog));
+                .then(response => response.json())
+                .then(responseData => {
+                    if (responseData.status === 'success') {
+                        document.getElementById('form-description').value = responseData.text;
+                    }
+                })
+                .catch(errorLog => console.error('Gagal memproses pembuatan deskripsi otomatis:', errorLog));
         }
 
         function openDetailModal(name, department, email, score, description) {
@@ -311,7 +409,7 @@
 
             const containerModal = document.getElementById('detail-modal');
             const wrapperContent = document.getElementById('modal-content');
-            
+
             containerModal.classList.remove('hidden');
             setTimeout(() => {
                 wrapperContent.classList.remove('scale-95', 'opacity-0');
@@ -322,7 +420,7 @@
         function closeDetailModal() {
             const containerModal = document.getElementById('detail-modal');
             const wrapperContent = document.getElementById('modal-content');
-            
+
             wrapperContent.classList.remove('scale-100', 'opacity-100');
             wrapperContent.classList.add('scale-95', 'opacity-0');
             setTimeout(() => {
@@ -375,28 +473,133 @@
             });
         }
 
+        function triggerDeleteAllConfirmation() {
+            Swal.fire({
+                title: "Apakah Anda sangat yakin?",
+                text: "Semua data pakar akan dihapus secara permanen dari database. Tindakan ini tidak dapat dibatalkan!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#ef4444",
+                cancelButtonColor: "#3b82f6",
+                confirmButtonText: "Ya, Hapus Semua!",
+                cancelButtonText: "Batal"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "/delete-all-experts";
+                }
+            });
+        }
+
+        // Delegasi event listener untuk menangani klik tombol secara aman tanpa inline onclick
+        document.addEventListener('click', function (event) {
+            const detailBtn = event.target.closest('.detail-btn');
+            if (detailBtn) {
+                const name = detailBtn.getAttribute('data-name');
+                const department = detailBtn.getAttribute('data-department');
+                const email = detailBtn.getAttribute('data-email');
+                const score = detailBtn.getAttribute('data-score');
+                const description = detailBtn.getAttribute('data-description');
+                openDetailModal(name, department, email, score, description);
+                return;
+            }
+
+            const editBtn = event.target.closest('.edit-btn');
+            if (editBtn) {
+                const id = editBtn.getAttribute('data-id');
+                const name = editBtn.getAttribute('data-name');
+                const email = editBtn.getAttribute('data-email');
+                const department = editBtn.getAttribute('data-department');
+                const description = editBtn.getAttribute('data-description');
+                openEditModal(id, name, email, department, description);
+                return;
+            }
+
+            const deleteBtn = event.target.closest('.delete-btn');
+            if (deleteBtn) {
+                const id = deleteBtn.getAttribute('data-id');
+                const name = deleteBtn.getAttribute('data-name');
+                triggerDeleteConfirmation(id, name);
+                return;
+            }
+
+            const deleteAllBtn = event.target.closest('#delete-all-btn');
+            if (deleteAllBtn) {
+                triggerDeleteAllConfirmation();
+                return;
+            }
+        });
+
         const activeUrlParameter = new URLSearchParams(window.location.search);
         if (activeUrlParameter.get('tab') === 'manage') {
             switchTab('manage');
         }
+
+        // Tampilkan loading screen/overlay saat melakukan aksi database yang membutuhkan retrain model
+        document.addEventListener("DOMContentLoaded", function () {
+            const addForm = document.getElementById('add-expert-form');
+            if (addForm) {
+                addForm.addEventListener('submit', function () {
+                    Swal.fire({
+                        title: "Menyimpan Data Pakar...",
+                        text: "AI sedang me-retrain model di background process. Harap tunggu.",
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                });
+            }
+
+            const editForm = document.getElementById('edit-form');
+            if (editForm) {
+                editForm.addEventListener('submit', function () {
+                    Swal.fire({
+                        title: "Memperbarui Data Pakar...",
+                        text: "AI sedang me-retrain model di background process. Harap tunggu.",
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                });
+            }
+
+            const importForm = document.getElementById('import-csv-form');
+            if (importForm) {
+                importForm.addEventListener('submit', function () {
+                    Swal.fire({
+                        title: "Memproses Impor Berkas Pakar...",
+                        text: "AI sedang meng-import data dan me-retrain model. Harap tunggu.",
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                });
+            }
+        });
     </script>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <script>
-          document.addEventListener("DOMContentLoaded", function() {
+    {% if messages %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
             {% for category, message in messages %}
-              Swal.fire({
+            Swal.fire({
                 title: "Berhasil!",
                 text: "{{ message }}",
                 icon: "{{ category }}",
                 confirmButtonColor: "#3b82f6"
-              });
+            });
             {% endfor %}
-          });
-        </script>
-      {% endif %}
+        });
+    </script>
+    {% endif %}
     {% endwith %}
 
 </body>
+
 </html>

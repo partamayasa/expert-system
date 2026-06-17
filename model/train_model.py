@@ -27,6 +27,21 @@ def train_model():
     # 2. Ambil data langsung dari SQLite
     try:
         conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS experts (
+                id TEXT PRIMARY KEY,
+                name TEXT,
+                department TEXT,
+                email TEXT,
+                description TEXT,
+                UNIQUE(name, email)
+            )
+        """
+        )
+        conn.commit()
+        
         query = "SELECT description FROM experts"
         df = pd.read_sql_query(query, conn)
         conn.close()
@@ -43,17 +58,29 @@ def train_model():
     
     # 3. Proses Training TF-IDF
     vectorizer = TfidfVectorizer(lowercase=True, stop_words=indonesian_stopwords)
-    tfidf_matrix = vectorizer.fit_transform(df['description'])
+    try:
+        tfidf_matrix = vectorizer.fit_transform(df['description'])
+    except ValueError as e:
+        print(f"PERINGATAN: TfidfVectorizer gagal melatih model ({e}). Menggunakan kata kunci fallback.")
+        fallback_descriptions = ["pakar kompetensi umum internal perusahaan"]
+        vectorizer = TfidfVectorizer(lowercase=True, stop_words=indonesian_stopwords)
+        tfidf_matrix = vectorizer.fit_transform(fallback_descriptions)
     
     # 4. Simpan Berkas Model Bisnis Baru (.pkl)
     vectorizer_path = os.path.join(model_dir, "tfidf_vectorizer.pkl")
     matrix_path = os.path.join(model_dir, "tfidf_matrix.pkl")
     
-    with open(vectorizer_path, "wb") as f:
+    tmp_vectorizer_path = vectorizer_path + ".tmp"
+    tmp_matrix_path = matrix_path + ".tmp"
+    
+    with open(tmp_vectorizer_path, "wb") as f:
         pickle.dump(vectorizer, f)
         
-    with open(matrix_path, "wb") as f:
+    with open(tmp_matrix_path, "wb") as f:
         pickle.dump(tfidf_matrix, f)
+        
+    os.replace(tmp_vectorizer_path, vectorizer_path)
+    os.replace(tmp_matrix_path, matrix_path)
         
     print("SUCCESS: Model AI sukses diperbarui dan disinkronisasikan ke database.")
 

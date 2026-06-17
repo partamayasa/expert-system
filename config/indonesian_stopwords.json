@@ -11,12 +11,10 @@
     "ku", "mu", "nya",
     "tidak", "bukan", "belum", "jangan", "bisa", "dapat", "boleh", "harus", "mesti",
     "akan", "sedang", "telah", "sudah", "pernah", "sangat", "amat", "paling", "lebih",
-    "agak", "cukup", "hanya", "saja", "juga", "pun", "pula", "bahkan", "terutama", "kantor",
+    "agak", "cukup", "hanya", "saja", "juga", "pun", "pula", "bahkan", "terutama",
     "ada", "adalah", "ialah", "merupakan", "melakukan", "membuat", "menggunakan", "menjadi",
     "secara", "seperti", "banyak", "sedikit", "beberapa", "setiap", "seluruh", "semua",
-    "perlu", "butuh", "membutuhkan", "memerlukan", "bantu", "bantuan", "membantu",
-    "perbaiki", "perbaikan", "memperbaiki", "rusak", "error", "masalah", "kendala", "solusi",
-    "bersih", "bersih-bersih", "membersihkan", "pembersihan",
+    "perlu", "butuh", "membutuhkan", "memerlukan",
     "tolong", "mohon", "silahkan", "silakan", "halo", "permisi",
     "sekarang", "hari", "waktu", "saat", "minta", "meminta"
 ]
