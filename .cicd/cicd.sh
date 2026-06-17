@@ -1,22 +1,24 @@
 #!/bin/bash
 
-# 1. Masuk ke folder proyek
+# 1. Navigate to the project directory
 cd /home/expert-system
 
-# 2. Catat ID komit lokal saat ini sebelum diperbarui
+# 2. Record the current local commit ID before checking for updates
 OLD_COMMIT=$(git rev-parse HEAD)
 
-# 3. Paksa ambil kode terbaru dari server dan timpa file lokal
+# 3. Fetch the latest code from GitHub and overwrite local files
 git fetch origin development
 git reset --hard origin/development
 
-# 4. Catat ID komit setelah proses reset
+# 4. Record the commit ID after the reset process
 NEW_COMMIT=$(git rev-parse HEAD)
 
-# 5. Cek apakah ID komit berubah (artinya ada kode baru yang masuk)
+# 5. Check if the commit ID has changed (indicating new code was pulled)
 if [ "$OLD_COMMIT" != "$NEW_COMMIT" ]; then
     echo "$(date): New code detected; initiating server update" >> /home/expert-system/.cicd/cicd.log
 
-    # Restart service agar perubahan langsung aktif
+    # REQUIRED: Restart the service so Flask loads the newly updated code files
     sudo systemctl restart expert-system.service
+
+    echo "$(date): expert-system.service successfully restarted" >> /home/expert-system/.cicd/cicd.log
 fi

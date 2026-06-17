@@ -6,6 +6,7 @@ import pickle
 import random
 import sqlite3
 import time
+import threading  # Ditambahkan untuk menangani background processing agar sistem tidak down sementara
 from flask import Flask, Response, redirect, render_template, request, url_for, flash
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -120,6 +121,13 @@ def load_resources():
         conn,
     )
     conn.close()
+
+# Fungsi pembungkus untuk menjalankan pelatihan ulang secara asynchronous di background thread
+def start_background_retrain():
+    def run():
+        retrain_tfidf_model()
+        load_resources()
+    threading.Thread(target=run, daemon=True).start()
 
 try:
     load_resources()
@@ -265,8 +273,9 @@ def add_expert():
         conn.commit()
         conn.close()
 
-        retrain_tfidf_model()
-        load_resources()
+        # Menjalankan pelatihan ulang di background thread agar tidak memblokir user
+        start_background_retrain()
+        flash("Data pakar berhasil ditambahkan! AI sedang menyegarkan model di latar belakang.", "success")
 
     return redirect(url_for("index") + "?tab=manage")
 
@@ -287,11 +296,9 @@ def edit_expert(expert_id):
         conn.commit()
         conn.close()
 
-        retrain_tfidf_model()
-        load_resources()
-        
-        # Ditambahkan: Kirim flash message sukses ke index.html
-        flash("Data pakar berhasil diperbarui!", "success")
+        # Menjalankan pelatihan ulang di background thread agar tidak memblokir user
+        start_background_retrain()
+        flash("Data pakar berhasil diperbarui! AI sedang menyegarkan model di latar belakang.", "success")
 
     return redirect(url_for("index") + "?tab=manage")
 
@@ -303,8 +310,9 @@ def delete_expert(expert_id):
     conn.commit()
     conn.close()
 
-    retrain_tfidf_model()
-    load_resources()
+    # Menjalankan pelatihan ulang di background thread agar tidak memblokir user
+    start_background_retrain()
+    flash("Data pakar berhasil dihapus! AI sedang melakukan kalkulasi ulang di latar belakang.", "success")
 
     return redirect(url_for("index") + "?tab=manage")
 
@@ -366,8 +374,9 @@ def import_csv():
             conn.commit()
             conn.close()
 
-            retrain_tfidf_model()
-            load_resources()
+            # Proses training massal dilempar ke background thread agar server tidak timeout/freeze
+            start_background_retrain()
+            flash("Import CSV massal berhasil dijalankan! AI sedang melakukan training data baru di latar belakang.", "success")
 
         except Exception as e:
             return f"Terjadi kesalahan saat memproses data CSV: {str(e)}", 500

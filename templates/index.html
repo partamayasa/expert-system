@@ -49,7 +49,7 @@
                         </div>
                         <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end">
                             <button type="button" 
-                                    onclick="openDetailModal('{{ item['Name'] | replace("'", "\\'") }}', '{{ item['Department'] | replace("'", "\\'") }}', '{{ item['Email'] | replace("'", "\\'") }}', '{{ (item['Score'] * 100) | round(1) }}%', '{{ item['Description'] | replace("'", "\\'") | replace('\n', ' ') | replace('\r', '') }}')" 
+                                    onclick="openDetailModal('{{ item['Name'] | replace('\'', '\\\'') }}', '{{ item['Department'] | replace('\'', '\\\'') }}', '{{ item['Email'] | replace('\'', '\\\'') }}', '{{ (item['Score'] * 100) | round(1) }}%', '{{ item['Description'] | replace('\'', '\\\'') | replace('\n', ' ') | replace('\r', '') }}')" 
                                     class="text-blue-600 hover:text-blue-800 text-xs font-bold transition">
                                 Lihat Detail &rarr;
                             </button>
@@ -85,10 +85,14 @@
                         <div>
                             <label class="block text-gray-700 text-xs font-bold mb-1">Divisi / Kompetensi</label>
                             <select name="department" id="form-department" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                <option value="IT Infrastructure">IT Infrastructure</option>
+                                <option value="Teknologi">Teknologi</option>
+                                <option value="Administrasi">Administrasi</option>
+                                <option value="Manajemen Risiko">Manajemen Risiko</option>
+                                <option value="Human Capital">Human Capital</option>
+                                <option value="Keuangan & Pajak">Keuangan & Pajak</option>
                                 <option value="Legal & Hukum">Legal & Hukum</option>
-                                <option value="Data Science & AI">Data Science & AI</option>
-                                <option value="Cyber Security">Cyber Security</option>
+                                <option value="Pemasaran Digital">Pemasaran Digital</option>
+                                <option value="Operasional Pabrik">Operasional Pabrik</option>
                             </select>
                         </div>
 
@@ -155,13 +159,13 @@
                             <td class="px-4 py-3 text-xs truncate max-w-xs" title="{{ item['Description'] }}">{{ item['Description'] }}</td>
                             <td class="px-4 py-3 text-xs text-center space-x-2 whitespace-nowrap">
                                 <button type="button" 
-                                        onclick="openEditModal('{{ item['ID'] }}', '{{ item['Name'] | replace("'", "\\'") }}', '{{ item['Email'] | replace("'", "\\'") }}', '{{ item['Department'] }}', '{{ item['Description'] | replace("'", "\\'") | replace('\n', ' ') }}')"
+                                        onclick="openEditModal('{{ item['ID'] }}', '{{ item['Name'] | replace('\'', '\\\'') }}', '{{ item['Email'] | replace('\'', '\\\'') }}', '{{ item['Department'] }}', '{{ item['Description'] | replace('\'', '\\\'') | replace('\n', ' ') }}')"
                                         class="bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-3 py-1.5 rounded-lg border border-amber-200 transition shadow-sm">
                                     Edit
                                 </button>
                                 
                                 <button type="button"
-                                        onclick="triggerDeleteConfirmation('{{ item['ID'] }}', '{{ item['Name'] | replace("'", "\\'") }}')"
+                                        onclick="triggerDeleteConfirmation('{{ item['ID'] }}', '{{ item['Name'] | replace('\'', '\\\'') }}')"
                                         class="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition shadow-sm">
                                     Hapus
                                 </button>
@@ -229,10 +233,14 @@
                     <div>
                         <label class="block text-gray-700 text-xs font-bold mb-1">Divisi / Kompetensi</label>
                         <select id="edit-department" name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                            <option value="IT Infrastructure">IT Infrastructure</option>
+                            <option value="Teknologi">Teknologi</option>
+                            <option value="Administrasi">Administrasi</option>
+                            <option value="Manajemen Risiko">Manajemen Risiko</option>
+                            <option value="Human Capital">Human Capital</option>
+                            <option value="Keuangan & Pajak">Keuangan & Pajak</option>
                             <option value="Legal & Hukum">Legal & Hukum</option>
-                            <option value="Data Science & AI">Data Science & AI</option>
-                            <option value="Cyber Security">Cyber Security</option>
+                            <option value="Pemasaran Digital">Pemasaran Digital</option>
+                            <option value="Operasional Pabrik">Operasional Pabrik</option>
                         </select>
                     </div>
                     <div>
@@ -249,10 +257,6 @@
     </div>
 
     <script>
-        /**
-         * Mengubah tampilan tab aktif antara menu pencarian dan menu pengelolaan database.
-         * @param {string} targetTab - Nama identifikasi tab tujuan ('search' atau 'manage').
-         */
         function switchTab(targetTab) {
             const searchTabElement = document.getElementById('tab-search');
             const manageTabElement = document.getElementById('tab-manage');
@@ -272,9 +276,6 @@
             }
         }
 
-        /**
-         * Mengirimkan permintaan ke server untuk menghasilkan narasi deskripsi kompetensi pakar secara otomatis berbasis kata kunci.
-         */
         function triggerAIGenerator() {
             const selectedDepartment = document.getElementById('form-department').value;
             const inputKeywords = document.getElementById('ai-keywords').value;
@@ -301,9 +302,6 @@
             .catch(errorLog => console.error('Gagal memproses pembuatan deskripsi otomatis:', errorLog));
         }
 
-        /**
-         * Membuka dan menampilkan jendela modal pop-up yang berisi rincian profil pakar secara lengkap.
-         */
         function openDetailModal(name, department, email, score, description) {
             document.getElementById('modal-name').innerText = name;
             document.getElementById('modal-department').innerText = department;
@@ -321,9 +319,6 @@
             }, 10);
         }
 
-        /**
-         * Menutup jendela modal rincian profil pakar dengan efek transisi memudar halus.
-         */
         function closeDetailModal() {
             const containerModal = document.getElementById('detail-modal');
             const wrapperContent = document.getElementById('modal-content');
@@ -335,9 +330,6 @@
             }, 200);
         }
 
-        /**
-         * Membuka modal form edit pakar dan memasukkan data lama ke dalam kolom form input secara otomatis.
-         */
         function openEditModal(id, name, email, department, description) {
             document.getElementById('edit-form').action = `/edit-expert/${id}`;
             document.getElementById('edit-name').value = name;
@@ -355,9 +347,6 @@
             }, 10);
         }
 
-        /**
-         * Menutup jendela form edit dengan efek transisi memudar halus.
-         */
         function closeEditModal() {
             const editModal = document.getElementById('edit-modal');
             const editContent = document.getElementById('edit-modal-content');
@@ -369,11 +358,6 @@
             }, 200);
         }
 
-        /**
-         * Menampilkan jendela dialog konfirmasi hapus data berbasis SweetAlert2.
-         * @param {string} id - Id unik pakar yang akan dihapus.
-         * @param {string} name - Nama lengkap pakar yang akan dihapus.
-         */
         function triggerDeleteConfirmation(id, name) {
             Swal.fire({
                 title: "Apakah Anda yakin?",
@@ -391,7 +375,6 @@
             });
         }
 
-        // Mengecek parameter tautan URL untuk memastikan pengguna berada pada tab yang benar setelah halaman memuat ulang.
         const activeUrlParameter = new URLSearchParams(window.location.search);
         if (activeUrlParameter.get('tab') === 'manage') {
             switchTab('manage');
