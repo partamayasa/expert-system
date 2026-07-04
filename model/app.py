@@ -18,6 +18,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Lokasi folder 'model/'
 DB_PATH = os.path.join(BASE_DIR, "data", "experts.db")
 VECTORIZER_PATH = os.path.join(BASE_DIR, "saved_models", "tfidf_vectorizer.pkl")
 MATRIX_PATH = os.path.join(BASE_DIR, "saved_models", "tfidf_matrix.pkl")
+PROBLEM_VECTORIZER_PATH = os.path.join(BASE_DIR, "saved_models", "problem_tfidf_vectorizer.pkl")
+PROBLEM_MATRIX_PATH = os.path.join(BASE_DIR, "saved_models", "problem_tfidf_matrix.pkl")
 
 # Mengakses folder 'config/' dan 'templates/' yang naik 1 tingkat dari folder 'model/'
 CONFIG_JSON_PATH = os.path.abspath(os.path.join(BASE_DIR, "..", "config", "config.json"))
@@ -62,64 +64,111 @@ def init_db():
         )
     """
     )
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS problem_solving (
+            id TEXT PRIMARY KEY,
+            expert_id TEXT,
+            problem TEXT,
+            solution TEXT,
+            FOREIGN KEY(expert_id) REFERENCES experts(id) ON DELETE CASCADE
+        )
+    """
+    )
     conn.commit()
     conn.close()
 
 init_db()
 
+# Inisialisasi variabel model global
+vectorizer = None
+tfidf_matrix = None
+df_experts = pd.DataFrame(columns=["ID", "Name", "Department", "Email", "Description"])
+
+problem_vectorizer = None
+problem_tfidf_matrix = None
+df_problems = pd.DataFrame(columns=["ID", "ExpertID", "Problem", "Solution"])
+
 # Pipeline pelatihan ulang model ai (Proses Ekstraksi & Fit Model)
 def retrain_tfidf_model():
     """
-    Melatih ulang model TF-IDF secara terpusat berdasarkan data kompetensi terbaru dari database.
+    Melatih ulang model TF-IDF secara terpusat berdasarkan data kompetensi terbaru dan riwayat masalah dari database.
     """
     try:
-        # Langkah 1: Pastikan tabel terinisialisasi dan ambil semua deskripsi pakar dari database SQLite
+        # Langkah 1: Pastikan tabel terinisialisasi dan ambil data dari database SQLite
         init_db()
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
+        
         cursor.execute("SELECT description FROM experts")
         all_descriptions = [row[0] for row in cursor.fetchall()]
+        
+        cursor.execute("SELECT problem, solution FROM problem_solving")
+        all_problems = [f"{row[0]} {row[1]}" for row in cursor.fetchall()]
+        
         conn.close()
 
-        # Fallback jika database masih kosong
+        # Fallback jika database pakar kosong
         if not all_descriptions:
             all_descriptions = ["pakar kompetensi umum internal perusahaan"]
 
-        # Langkah 2: Inisialisasi TfidfVectorizer dengan stop words bahasa Indonesia
+        # Fallback jika database masalah kosong
+        if not all_problems:
+            all_problems = ["kendala masalah sistem jaringan komputer internet koneksi"]
+
+        # Langkah 2: Inisialisasi TfidfVectorizer untuk Expert
         new_vectorizer = TfidfVectorizer(lowercase=True, stop_words=INDONESIAN_STOPWORDS)
         try:
-            # Langkah 3: Hitung bobot TF-IDF (Term Frequency - Inverse Document Frequency) dari seluruh deskripsi pakar
             new_tfidf_matrix = new_vectorizer.fit_transform(all_descriptions)
         except ValueError as e:
-            # Mengatasi error jika vocabulary kosong (misal semua teks hanya stopwords)
-            print(f"PERINGATAN: TfidfVectorizer gagal melatih model ({e}). Menggunakan kata kunci fallback.")
+            print(f"PERINGATAN: TfidfVectorizer gagal melatih model expert ({e}). Menggunakan kata kunci fallback.")
             all_descriptions = ["pakar kompetensi umum internal perusahaan"]
             new_vectorizer = TfidfVectorizer(lowercase=True, stop_words=INDONESIAN_STOPWORDS)
             new_tfidf_matrix = new_vectorizer.fit_transform(all_descriptions)
 
+        # Langkah 2b: Inisialisasi TfidfVectorizer untuk Problems
+        new_problem_vectorizer = TfidfVectorizer(lowercase=True, stop_words=INDONESIAN_STOPWORDS)
+        try:
+            new_problem_tfidf_matrix = new_problem_vectorizer.fit_transform(all_problems)
+        except ValueError as e:
+            print(f"PERINGATAN: TfidfVectorizer gagal melatih model problem ({e}). Menggunakan kata kunci fallback.")
+            all_problems = ["kendala masalah sistem jaringan komputer internet koneksi"]
+            new_problem_vectorizer = TfidfVectorizer(lowercase=True, stop_words=INDONESIAN_STOPWORDS)
+            new_problem_tfidf_matrix = new_problem_vectorizer.fit_transform(all_problems)
+
         os.makedirs(os.path.dirname(VECTORIZER_PATH), exist_ok=True)
         
-        # Langkah 4: Simpan model dan matriks bobot yang telah dilatih menggunakan Pickle (.pkl) secara aman
+        # Simpan model expert secara aman
         tmp_vectorizer_path = VECTORIZER_PATH + ".tmp"
         tmp_matrix_path = MATRIX_PATH + ".tmp"
-        
         with open(tmp_vectorizer_path, "wb") as f:
             pickle.dump(new_vectorizer, f)
         with open(tmp_matrix_path, "wb") as f:
             pickle.dump(new_tfidf_matrix, f)
-            
         os.replace(tmp_vectorizer_path, VECTORIZER_PATH)
         os.replace(tmp_matrix_path, MATRIX_PATH)
-        print("INFO: Model TF-IDF berhasil dilatih ulang dan disimpan secara aman.")
+        
+        # Simpan model problem secara aman
+        tmp_problem_vectorizer_path = PROBLEM_VECTORIZER_PATH + ".tmp"
+        tmp_problem_matrix_path = PROBLEM_MATRIX_PATH + ".tmp"
+        with open(tmp_problem_vectorizer_path, "wb") as f:
+            pickle.dump(new_problem_vectorizer, f)
+        with open(tmp_problem_matrix_path, "wb") as f:
+            pickle.dump(new_problem_tfidf_matrix, f)
+        os.replace(tmp_problem_vectorizer_path, PROBLEM_VECTORIZER_PATH)
+        os.replace(tmp_problem_matrix_path, PROBLEM_MATRIX_PATH)
+        
+        print("INFO: Model TF-IDF Expert & Problem berhasil dilatih ulang dan disimpan secara aman.")
     except Exception as e:
         print(f"ERROR: Gagal melakukan retrain model TF-IDF: {e}")
 
 # Muat sumber daya ke memori (Proses Caching data ke RAM)
 def load_resources():
     """
-    Memuat kembali model TF-IDF, matriks bobot teks, dan seluruh data pakar ke dalam memori aplikasi.
+    Memuat kembali model TF-IDF, matriks bobot teks, data pakar, dan riwayat masalah ke dalam memori aplikasi.
     """
     global vectorizer, tfidf_matrix, df_experts
+    global problem_vectorizer, problem_tfidf_matrix, df_problems
     
     with model_lock:
         try:
@@ -129,26 +178,34 @@ def load_resources():
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM experts")
             row_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM problem_solving")
+            problem_count = cursor.fetchone()[0]
             conn.close()
 
-            if row_count == 0:
-                print("INFO: Database kosong. Sumber daya model tidak akan dimuat ke memori.")
-                vectorizer = None
-                tfidf_matrix = None
-                df_experts = pd.DataFrame(columns=["ID", "Name", "Department", "Email", "Description"])
-                return
+            # Cek apakah berkas model hilang
+            expert_model_missing = not os.path.exists(VECTORIZER_PATH) or not os.path.exists(MATRIX_PATH)
+            problem_model_missing = not os.path.exists(PROBLEM_VECTORIZER_PATH) or not os.path.exists(PROBLEM_MATRIX_PATH)
+            
+            need_retrain = expert_model_missing or problem_model_missing
 
-            # Cek apakah berkas model hilang atau jumlah data tidak sinkron dengan database
-            model_missing = not os.path.exists(VECTORIZER_PATH) or not os.path.exists(MATRIX_PATH)
-            need_retrain = model_missing
-
-            if not model_missing:
+            # Validasi sinkronisasi baris dengan bentuk matriks
+            if not expert_model_missing and row_count > 0:
                 try:
                     with open(MATRIX_PATH, "rb") as f:
                         temp_matrix = pickle.load(f)
                     if temp_matrix.shape[0] != row_count:
                         need_retrain = True
-                        print(f"INFO: Model out-of-sync (Model: {temp_matrix.shape[0]}, DB: {row_count}).")
+                        print(f"INFO: Model Expert out-of-sync (Model: {temp_matrix.shape[0]}, DB: {row_count}).")
+                except Exception:
+                    need_retrain = True
+
+            if not problem_model_missing and problem_count > 0:
+                try:
+                    with open(PROBLEM_MATRIX_PATH, "rb") as f:
+                        temp_p_matrix = pickle.load(f)
+                    if temp_p_matrix.shape[0] != problem_count:
+                        need_retrain = True
+                        print(f"INFO: Model Problem out-of-sync (Model: {temp_p_matrix.shape[0]}, DB: {problem_count}).")
                 except Exception:
                     need_retrain = True
 
@@ -156,17 +213,34 @@ def load_resources():
                 print("INFO: Memicu pelatihan ulang model AI secara otomatis agar sinkron...")
                 retrain_tfidf_model()
 
-            # Langkah 5: Muat model vectorizer dan tfidf_matrix yang tersimpan ke RAM untuk melayani pencarian cepat
-            with open(VECTORIZER_PATH, "rb") as f:
-                vectorizer = pickle.load(f)
-            with open(MATRIX_PATH, "rb") as f:
-                tfidf_matrix = pickle.load(f)
+            # Muat model expert
+            if os.path.exists(VECTORIZER_PATH) and os.path.exists(MATRIX_PATH):
+                with open(VECTORIZER_PATH, "rb") as f:
+                    vectorizer = pickle.load(f)
+                with open(MATRIX_PATH, "rb") as f:
+                    tfidf_matrix = pickle.load(f)
+            else:
+                vectorizer = None
+                tfidf_matrix = None
 
-            # Langkah 6: Muat seluruh data pakar dari SQLite ke Pandas DataFrame global
-            init_db()
+            # Muat model problem
+            if os.path.exists(PROBLEM_VECTORIZER_PATH) and os.path.exists(PROBLEM_MATRIX_PATH):
+                with open(PROBLEM_VECTORIZER_PATH, "rb") as f:
+                    problem_vectorizer = pickle.load(f)
+                with open(PROBLEM_MATRIX_PATH, "rb") as f:
+                    problem_tfidf_matrix = pickle.load(f)
+            else:
+                problem_vectorizer = None
+                problem_tfidf_matrix = None
+
+            # Muat data pakar dari SQLite ke Pandas DataFrame global
             conn = sqlite3.connect(DB_PATH)
             df_experts = pd.read_sql_query(
                 "SELECT id AS ID, name AS Name, department AS Department, email AS Email, description AS Description FROM experts",
+                conn,
+            )
+            df_problems = pd.read_sql_query(
+                "SELECT id AS ID, expert_id AS ExpertID, problem AS Problem, solution AS Solution FROM problem_solving",
                 conn,
             )
             conn.close()
@@ -279,29 +353,53 @@ def index():
             # Ambil salinan lokal di bawah lock untuk menjaga konsistensi shape data
             with model_lock:
                 local_df_experts = df_experts.copy() if df_experts is not None else pd.DataFrame(columns=["ID", "Name", "Department", "Email", "Description"])
+                local_df_problems = df_problems.copy() if df_problems is not None else pd.DataFrame(columns=["ID", "ExpertID", "Problem", "Solution"])
                 local_vectorizer = vectorizer
                 local_tfidf_matrix = tfidf_matrix
+                local_problem_vectorizer = problem_vectorizer
+                local_problem_tfidf_matrix = problem_tfidf_matrix
 
-            if query and not local_df_experts.empty and local_vectorizer is not None and local_tfidf_matrix is not None:
+
+
+            # 2. Cari berdasarkan Riwayat Masalah (Problem Solving)
+            if not local_df_problems.empty and local_problem_vectorizer is not None and local_problem_tfidf_matrix is not None:
                 try:
-                    # Pengolahan data pencarian (transformasi input & cosine similarity)
-                    # Langkah A: Transformasi teks kueri pencarian user ke dalam vektor TF-IDF
-                    query_vector = local_vectorizer.transform([query])
-                    
-                    # Langkah B: Hitung skor kedekatan / kemiripan (cosine similarity) antara kueri dengan seluruh deskripsi pakar
-                    cosine_sim = cosine_similarity(query_vector, local_tfidf_matrix)[0]
-
-                    df_temp = local_df_experts.copy()
+                    query_vector = local_problem_vectorizer.transform([query])
+                    cosine_sim = cosine_similarity(query_vector, local_problem_tfidf_matrix)[0]
+                    df_temp = local_df_problems.copy()
                     df_temp["Score"] = cosine_sim
                     
                     if "Score" in df_temp.columns:
-                        # Langkah C: Saring data pakar yang memiliki nilai kecocokan di atas ambang batas (Score > 0.05)
-                        # Langkah D: Urutkan data berdasarkan skor kemiripan terbesar ke terkecil (descending)
-                        df_result = df_temp[df_temp["Score"] > 0.05].sort_values(by="Score", ascending=False)
-                        recommendations = df_result.to_dict(orient="records")
+                        df_result = df_temp[df_temp["Score"] > 0.05]
+                        problems_match = df_result.to_dict(orient="records")
+                        
+                        for p_match in problems_match:
+                            p_match["MatchType"] = "problem"
+                            expert_id = p_match["ExpertID"]
+                            
+                            # Cari detail pakar terkait
+                            exp_rows = local_df_experts[local_df_experts["ID"] == expert_id]
+                            if not exp_rows.empty:
+                                exp_data = exp_rows.iloc[0]
+                                p_match["ExpertName"] = exp_data["Name"]
+                                p_match["ExpertEmail"] = exp_data["Email"]
+                                p_match["ExpertDepartment"] = exp_data["Department"]
+                                p_match["ExpertDescription"] = exp_data["Description"]
+                            else:
+                                p_match["ExpertName"] = "Tidak Diketahui"
+                                p_match["ExpertEmail"] = "-"
+                                p_match["ExpertDepartment"] = "-"
+                                p_match["ExpertDescription"] = "-"
+                            
+                            # Ambil riwayat lengkap masalah pakar ini
+                            history_rows = local_df_problems[local_df_problems["ExpertID"] == expert_id]
+                            p_match["ExpertHistory"] = history_rows.to_dict(orient="records")
+                            recommendations.append(p_match)
                 except Exception as e:
-                    print(f"ERROR: Terjadi kegagalan saat pencarian TF-IDF: {e}")
-                    recommendations = []
+                    print(f"ERROR: Terjadi kegagalan saat pencarian TF-IDF masalah: {e}")
+
+            # Urutkan berdasarkan skor kemiripan tertinggi secara global
+            recommendations = sorted(recommendations, key=lambda x: x["Score"], reverse=True)
 
             # Simpan hasil kueri pencarian dan rekomendasi ke session (Penerapan Pola PRG)
             session["search_query"] = query
@@ -314,7 +412,6 @@ def index():
 
     # Untuk request GET:
     # Ambil data kueri & rekomendasi dari session jika diarahkan dari POST, lalu hapus instan dari session
-    # sehingga saat user menekan refresh/F5, halaman kembali ke state awal yang kosong
     query = session.pop("search_query", "")
     recommendations = session.pop("search_results", [])
 
@@ -397,6 +494,7 @@ def delete_expert(expert_id):
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    cursor.execute("DELETE FROM problem_solving WHERE expert_id=?", (expert_id,))
     cursor.execute("DELETE FROM experts WHERE id=?", (expert_id,))
     conn.commit()
     conn.close()
@@ -412,6 +510,7 @@ def delete_all_experts():
     init_db()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    cursor.execute("DELETE FROM problem_solving")
     cursor.execute("DELETE FROM experts")
     conn.commit()
     conn.close()
@@ -423,12 +522,99 @@ def delete_all_experts():
 
     return redirect(url_for("index") + "?tab=manage")
 
+@app.route("/get-problems/<expert_id>", methods=["GET"])
+def get_problems(expert_id):
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, problem, solution FROM problem_solving WHERE expert_id=?", (expert_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    problems_list = []
+    for row in rows:
+        problems_list.append({
+            "id": row[0],
+            "problem": row[1],
+            "solution": row[2]
+        })
+    return {"status": "success", "problems": problems_list}
+
+@app.route("/add-problem/<expert_id>", methods=["POST"])
+def add_problem(expert_id):
+    problem = request.form.get("problem", "").strip()
+    solution = request.form.get("solution", "").strip()
+    
+    if not problem or not solution:
+        return {"status": "error", "message": "Masalah dan solusi tidak boleh kosong!"}, 400
+        
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM problem_solving")
+    existing_ids = {row[0] for row in cursor.fetchall()}
+    while True:
+        seed = f"{expert_id}{time.time_ns()}{random.randint(1000, 9999)}"
+        git_hash_id = hashlib.md5(seed.encode()).hexdigest()[:7]
+        if git_hash_id not in existing_ids:
+            break
+            
+    cursor.execute(
+        "INSERT INTO problem_solving (id, expert_id, problem, solution) VALUES (?, ?, ?, ?)",
+        (git_hash_id, expert_id, problem, solution)
+    )
+    conn.commit()
+    conn.close()
+    
+    retrain_tfidf_model()
+    load_resources()
+    
+    return {"status": "success", "message": "Riwayat masalah berhasil ditambahkan!"}
+
+@app.route("/edit-problem/<problem_id>", methods=["POST"])
+def edit_problem(problem_id):
+    problem = request.form.get("problem", "").strip()
+    solution = request.form.get("solution", "").strip()
+    
+    if not problem or not solution:
+        return {"status": "error", "message": "Masalah dan solusi tidak boleh kosong!"}, 400
+        
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE problem_solving SET problem=?, solution=? WHERE id=?",
+        (problem, solution, problem_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    retrain_tfidf_model()
+    load_resources()
+    
+    return {"status": "success", "message": "Riwayat masalah berhasil diperbarui!"}
+
+@app.route("/delete-problem/<problem_id>", methods=["POST"])
+def delete_problem(problem_id):
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM problem_solving WHERE id=?", (problem_id,))
+    conn.commit()
+    conn.close()
+    
+    retrain_tfidf_model()
+    load_resources()
+    
+    return {"status": "success", "message": "Riwayat masalah berhasil dihapus!"}
+
 @app.route("/download-template", methods=["GET"])
 def download_template():
     output = io.StringIO()
-    output.write("Nama,Divisi,Email,Deskripsi Keahlian\n")
+    output.write("Nama,Divisi,Email,Deskripsi Keahlian,Riwayat Masalah\n")
     output.write(
-        'contoh: Prof. Andi,IT Infrastructure,andi@company.com,"Pakar infrastruktur server Linux dan jaringan internet LAN wifi."\n'
+        'Budi Santoso,Teknologi,budi.santoso@nextgen.id,"Pakar infrastruktur server Linux, virtualisasi Docker, dan keamanan jaringan.","[{""problem"": ""Virtualisasi Docker container tiba-tiba crash karena disk space penuh"", ""solution"": ""Jalankan docker system prune -a --volumes untuk membersihkan cache.""}]"\n'
     )
     response = Response(output.getvalue(), mimetype="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=template_pakar_baru.csv"
@@ -487,6 +673,31 @@ def import_csv():
                     (git_hash_id, name_val, dept_val, email_val, desc_val),
                 )
                 existing_records.add(record_key)
+
+                # Jika terdapat kolom Riwayat Masalah dan tidak kosong
+                if "Riwayat Masalah" in uploaded_df.columns and not pd.isna(row["Riwayat Masalah"]):
+                    try:
+                        import json
+                        problems_data = json.loads(str(row["Riwayat Masalah"]))
+                        if isinstance(problems_data, list):
+                            cursor.execute("SELECT id FROM problem_solving")
+                            p_ids = {r[0] for r in cursor.fetchall()}
+                            for p_item in problems_data:
+                                p_text = p_item.get("problem", "").strip()
+                                s_text = p_item.get("solution", "").strip()
+                                if p_text and s_text:
+                                    while True:
+                                        p_seed = f"{git_hash_id}{time.time_ns()}{random.random()}"
+                                        p_git_hash = hashlib.md5(p_seed.encode()).hexdigest()[:7]
+                                        if p_git_hash not in p_ids:
+                                            p_ids.add(p_git_hash)
+                                            break
+                                    cursor.execute(
+                                        "INSERT INTO problem_solving (id, expert_id, problem, solution) VALUES (?, ?, ?, ?)",
+                                        (p_git_hash, git_hash_id, p_text, s_text)
+                                    )
+                    except Exception as json_err:
+                        print(f"ERROR: Gagal memproses JSON Riwayat Masalah: {json_err}")
 
             conn.commit()
             conn.close()

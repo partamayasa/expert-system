@@ -9,15 +9,14 @@ By leveraging **Natural Language Processing (NLP)** techniques specifically **TF
 ## Core Key Features
 
 ### 1. Dynamic Expert Search (`Cari Ahli`)
-* **Semantic Query Matching:** Users can input a real-world issue, problem description, or specific skill requirement (e.g., *"koneksi internet bermasalah"* / internet connection issues).
-* **Ranked Recommendations:** The system processes the query, compares it against the expert database, and returns card-based recommendations sorted by a computed matching percentage score (filtering entries with a similarity index higher than `0.05`).
-* **Interactive Profile Inspection:** Each card features a "Lihat Detail" action button that pops open a frontend modal overlay containing comprehensive profile telemetry, strict matching scores, and complete competency descriptions.
+* **Semantic Query Matching:** Users can input a real-world issue, problem description, or solution keywords. The system compares the query against the combined text of **Problem** and **Solution** from the historical problem-solving database.
+* **Ranked Recommendations (Card Riwayat Masalah):** The system processes the query and returns card-based recommendations sorted by matching score (filtering entries with a similarity index higher than `0.05`). Each card displays the matched issue ("Kendala Serupa") and the resolution ("Solusi Yang Diterapkan").
+* **Interactive Profile & History Inspection:** Each card features a "Lihat Profil & Riwayat" button that pops open a frontend modal overlay showing the expert's full profile details (Name, Division, Email, and general "Keahlian Umum" description) along with a complete history of all issues they have resolved.
 
 ### 2. Centralized Database Management (`Kelola Pakar`)
-* **Manual Expert Onboarding:** Administrators can add new experts manually by inputting their full name, official company email address, division/competency track (e.g., *IT Infrastructure, Legal & Hukum, Data Science & AI, Cyber Security*), and a granular narrative description of their professional expertise.
-* **AI-Assisted Profile Generation:** Rather than typing manual copy, administrators can input short keywords (e.g., *wifi, error mac*), and the built-in **AI Description Generator** will run text similarity comparisons against existing descriptions or randomly assemble a professional fallback template profile on the fly.
-* **Massive Bulk Import (`Import CSV Massal`):** Supports rapid data scaling via structural CSV templates. Administrators can download a pre-formatted template file (`template_pakar_baru.csv`), populate it with bulk records, and upload it via the **"Jalankan Import & Retrain AI"** capability, which executes batch insertion while bypassing duplicate records.
-* **CRUD Database Operations:** An inline operational dashboard displays active profiles. Administrators can trigger interactive administrative controls for instant record updates (`Edit`) or permanent record removals (`Hapus`) featuring beautiful SweetAlert2 confirmation dialog overlays.
+* **Manual Expert Onboarding:** Administrators can add new experts manually by inputting their full name, official company email address, division/competency track (e.g., *Teknologi, Administrasi, Manajemen Risiko, Human Capital, Keuangan & Pajak, Legal & Hukum, Pemasaran Digital, Operasional Pabrik*), and a narrative description of their professional expertise.
+* **Massive Bulk Import (`Import CSV Massal`):** Supports rapid data scaling via structural CSV templates. Administrators can download a pre-formatted template file (`template_pakar_baru.csv`) containing 1 clean Indonesian example row (featuring valid JSON format for problems and solutions).
+* **CRUD Database Operations & UI Enhancements:** An inline operational dashboard displays active profiles. It features **real-time client-side search** and **pagination (10 items per page)** for the active expert database table, alongside interactive controls for instant record updates (`Edit`) or permanent removals (`Hapus`).
 
 ---
 

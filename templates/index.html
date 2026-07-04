@@ -29,11 +29,10 @@
             <div class="bg-white p-6 rounded-xl shadow-md mb-8">
                 <form method="POST" action="/">
                     <input type="hidden" name="search_submit" value="1">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Apa kendala atau kebutuhan kompetensi yang
-                        Anda cari?</label>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Apa kendala atau kebutuhan kompetensi yang Anda cari?</label>
                     <div class="flex gap-3">
                         <input type="text" name="query" value="{{ query }}"
-                            placeholder="Contoh: Saya ada kendala pada koneksi internet wifi kantor lambat"
+                            placeholder="Contoh: printer macet / koneksi VPN lambat / ahli data science"
                             class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <button type="submit"
                             class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition">Cari
@@ -44,40 +43,108 @@
 
             {% if query %}
             <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Hasil Rekomendasi Ahli Terkait</h2>
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Hasil Rekomendasi Terkait</h2>
                 {% if recommendations %}
                 {% set max_score = recommendations[0]['Score'] %}
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for item in recommendations %}
-                    {% set is_best = (item['Score'] == max_score) %}
-                    <div
-                        class="{% if is_best %}border-blue-500 border-2 shadow-md ring-4 ring-blue-50 bg-gradient-to-b from-blue-50/20 to-white{% else %}bg-white border border-gray-200 shadow-sm{% endif %} rounded-xl hover:shadow-md transition duration-200 flex flex-col justify-between overflow-hidden relative">
+                    {% set is_best = (loop.index == 1) %}
+                    
+                    {% if item['MatchType'] == 'problem' %}
+                    <!-- KARTU MASALAH / PROBLEM MATCHING -->
+                    <div class="{% if is_best %}border-blue-500 border-2 shadow-md ring-4 ring-blue-50 bg-gradient-to-b from-blue-50/20 to-white{% else %}bg-white border border-gray-200 shadow-sm{% endif %} rounded-xl hover:shadow-md transition duration-200 flex flex-col justify-between overflow-hidden relative">
                         {% if is_best %}
-                        <div
-                            class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center text-[11px] font-extrabold py-1.5 px-3 uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm">
-                            Rekomendasi Terbaik
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center text-[11px] font-extrabold py-1.5 px-3 uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm">
+                            Solusi Terdekat / Paling Sesuai
                         </div>
                         {% endif %}
-                        <div class="p-5">
-                            <div class="flex justify-between items-start gap-2 mb-3">
-                                <span
-                                    class="{% if is_best %}bg-blue-100 text-blue-800 border-blue-200{% else %}bg-blue-50 text-blue-700 border-blue-100{% endif %} text-xs font-semibold px-2.5 py-1 rounded border uppercase tracking-wider">{{
-                                    item['Department'] }}</span>
-                                <span
-                                    class="text-xs font-bold {% if is_best %}text-blue-800 bg-blue-100 border-blue-200{% else %}text-green-700 bg-green-50 border-green-100{% endif %} px-2 py-1 rounded-full whitespace-nowrap">Skor:
-                                    {{ (item['Score'] * 100) | round(1) }}%</span>
+                        <div class="p-5 space-y-3">
+                            <div class="flex justify-between items-start gap-2">
+                                <span class="{% if is_best %}bg-blue-100 text-blue-800 border-blue-200{% else %}bg-blue-50 text-blue-700 border-blue-100{% endif %} text-xs font-semibold px-2.5 py-1 rounded border uppercase tracking-wider">
+                                    {{ item['ExpertDepartment'] }}
+                                </span>
+                                <span class="text-xs font-bold {% if is_best %}text-blue-800 bg-blue-100 border-blue-200{% else %}text-green-700 bg-green-50 border-green-100{% endif %} px-2 py-1 rounded-full whitespace-nowrap">
+                                    Skor: {{ (item['Score'] * 100) | round(1) }}%
+                                </span>
                             </div>
-                            <h3 class="text-lg font-bold text-gray-900 line-clamp-1 mb-1" title="{{ item['Name'] }}">{{
-                                item['Name'] }}</h3>
-                            <p class="text-xs text-gray-500">{{ item['Email'] }}</p>
+                            
+                            <!-- Detail Masalah -->
+                            <div>
+                                <h4 class="text-[10px] font-bold text-red-500 uppercase tracking-wider">Kendala Serupa</h4>
+                                <p class="text-xs font-medium text-gray-800 mt-0.5 leading-relaxed bg-red-50 p-2.5 rounded-lg border border-red-100 line-clamp-3" title="{{ item['Problem'] }}">
+                                    {{ item['Problem'] }}
+                                </p>
+                            </div>
+
+                            <!-- Detail Solusi -->
+                            <div>
+                                <h4 class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Solusi Yang Diterapkan</h4>
+                                <p class="text-xs font-medium text-gray-800 mt-0.5 leading-relaxed bg-green-50 p-2.5 rounded-lg border border-green-100 line-clamp-3" title="{{ item['Solution'] }}">
+                                    {{ item['Solution'] }}
+                                </p>
+                            </div>
+
+                            <!-- Detail Pakar Ringkas -->
+                            <div class="pt-2 border-t border-gray-100 flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold uppercase shrink-0">
+                                    {{ item['ExpertName'][:2] }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h5 class="text-xs font-bold text-gray-800 truncate">{{ item['ExpertName'] }}</h5>
+                                    <p class="text-[10px] text-gray-500 truncate">{{ item['ExpertEmail'] }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                            <a href="mailto:{{ item['ExpertEmail'] }}" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded transition shadow-sm">
+                                Hubungi Pakar
+                            </a>
+                            <button type="button" 
+                                class="expert-history-btn text-blue-600 hover:text-blue-800 text-xs font-bold transition font-semibold"
+                                data-name="{{ item['ExpertName'] }}"
+                                data-department="{{ item['ExpertDepartment'] }}"
+                                data-email="{{ item['ExpertEmail'] }}"
+                                data-description="{{ item['ExpertDescription'] }}"
+                                data-history='{{ item["ExpertHistory"] | tojson | safe }}'>
+                                Lihat Profil & Riwayat
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% else %}
+                    <!-- KARTU KOMPETENSI / EXPERT MATCHING -->
+                    <div class="{% if is_best %}border-blue-500 border-2 shadow-md ring-4 ring-blue-50 bg-gradient-to-b from-blue-50/20 to-white{% else %}bg-white border border-gray-200 shadow-sm{% endif %} rounded-xl hover:shadow-md transition duration-200 flex flex-col justify-between overflow-hidden relative">
+                        {% if is_best %}
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center text-[11px] font-extrabold py-1.5 px-3 uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm">
+                            Rekomendasi Terbaik (Kompetensi)
+                        </div>
+                        {% endif %}
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start gap-2 mb-3">
+                                    <span class="{% if is_best %}bg-blue-100 text-blue-800 border-blue-200{% else %}bg-blue-50 text-blue-700 border-blue-100{% endif %} text-xs font-semibold px-2.5 py-1 rounded border uppercase tracking-wider">
+                                        {{ item['Department'] }}
+                                    </span>
+                                    <span class="text-xs font-bold {% if is_best %}text-blue-800 bg-blue-100 border-blue-200{% else %}text-green-700 bg-green-50 border-green-100{% endif %} px-2 py-1 rounded-full whitespace-nowrap">
+                                        Skor: {{ (item['Score'] * 100) | round(1) }}%
+                                    </span>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900 line-clamp-1 mb-1" title="{{ item['Name'] }}">{{ item['Name'] }}</h3>
+                                <p class="text-xs text-gray-500 mb-2">{{ item['Email'] }}</p>
+                                <div class="text-xs text-gray-600 bg-gray-50 p-2.5 rounded border border-gray-100 line-clamp-4 leading-relaxed italic" title="{{ item['Description'] }}">
+                                    {{ item['Description'] }}
+                                </div>
+                            </div>
                         </div>
                         <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-                            <a href="mailto:{{ item['Email'] }}"
-                                class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded transition shadow-sm">
+                            <a href="mailto:{{ item['Email'] }}" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded transition shadow-sm">
                                 Hubungi
                             </a>
                             <button type="button"
                                 class="detail-btn text-blue-600 hover:text-blue-800 text-xs font-bold transition"
+                                data-id="{{ item['ID'] }}"
                                 data-name="{{ item['Name'] }}" data-department="{{ item['Department'] }}"
                                 data-email="{{ item['Email'] }}" data-score="{{ (item['Score'] * 100) | round(1) }}%"
                                 data-description="{{ item['Description'] }}">
@@ -85,11 +152,12 @@
                             </button>
                         </div>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
                 {% else %}
                 <div class="bg-white p-6 rounded-xl shadow-md text-center">
-                    <p class="text-gray-500 italic">Tidak ada ahli yang cocok dengan kata kunci tersebut. Coba perkaya
+                    <p class="text-gray-500 italic">Tidak ada hasil yang cocok dengan kata kunci tersebut. Coba perkaya
                         kata kunci Anda.</p>
                 </div>
                 {% endif %}
@@ -141,19 +209,6 @@
                             </select>
                         </div>
 
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                            <label class="block text-blue-900 text-xs font-bold mb-1">Fitur AI Generator Deskripsi
-                                Keahlian</label>
-                            <div class="flex gap-2 mb-2">
-                                <input type="text" id="ai-keywords"
-                                    placeholder="Contoh keywords: wifi, error mac, internet lambat"
-                                    class="flex-1 px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400">
-                                <button type="button" onclick="triggerAIGenerator()"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition shrink-0">Generate
-                                    Deskripsi</button>
-                            </div>
-                        </div>
-
                         <div>
                             <label class="block text-gray-700 text-xs font-bold mb-1">Deskripsi Narasi Keahlian (Hasil
                                 Akhir)</label>
@@ -198,10 +253,17 @@
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-md overflow-x-auto">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 border-b border-gray-100 pb-3">
                     <h2 class="text-xl font-bold text-gray-800">Database Anggota Pakar Aktif</h2>
-                    <div class="flex items-center gap-3">
-                        <span class="bg-blue-50 text-blue-700 text-xs font-extrabold px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Input Pencarian Tabel -->
+                        <div class="relative shrink-0 w-64">
+                            <input type="text" id="table-search" placeholder="Cari nama, divisi, deskripsi..." class="w-full px-3 py-1.5 pl-8 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                            <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <span class="bg-blue-50 text-blue-700 text-xs font-extrabold px-3 py-1.5 rounded-full border border-blue-100 shadow-sm" id="table-total-badge">
                             Total: {{ experts | length }} Pakar
                         </span>
                         {% if experts %}
@@ -221,7 +283,7 @@
                             <th class="px-4 py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="experts-table-body">
                         {% for item in experts %}
                         <tr class="border-b hover:bg-gray-50">
                             <td class="px-4 py-3 font-mono text-xs text-blue-600">{{ item['ID'] }}</td>
@@ -230,25 +292,50 @@
                                     item['Department'] }}</span></td>
                             <td class="px-4 py-3 text-xs truncate max-w-xs" title="{{ item['Description'] }}">{{
                                 item['Description'] }}</td>
-                            <td class="px-4 py-3 text-xs text-center space-x-2 whitespace-nowrap">
+                            <td class="px-4 py-3 text-xs text-center space-x-2.5 whitespace-nowrap">
                                 <button type="button"
-                                    class="edit-btn bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-3 py-1.5 rounded-lg border border-amber-200 transition shadow-sm"
+                                    class="manage-problems-btn p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg border border-blue-200 transition shadow-sm inline-flex items-center justify-center"
                                     data-id="{{ item['ID'] }}" data-name="{{ item['Name'] }}"
-                                    data-email="{{ item['Email'] }}" data-department="{{ item['Department'] }}"
-                                    data-description="{{ item['Description'] }}">
-                                    Edit
+                                    title="Kelola Riwayat Masalah">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                    </svg>
                                 </button>
 
                                 <button type="button"
-                                    class="delete-btn bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition shadow-sm"
-                                    data-id="{{ item['ID'] }}" data-name="{{ item['Name'] }}">
-                                    Hapus
+                                    class="edit-btn p-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg border border-amber-200 transition shadow-sm inline-flex items-center justify-center"
+                                    data-id="{{ item['ID'] }}" data-name="{{ item['Name'] }}"
+                                    data-email="{{ item['Email'] }}" data-department="{{ item['Department'] }}"
+                                    data-description="{{ item['Description'] }}"
+                                    title="Ubah Data Pakar">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+
+                                <button type="button"
+                                    class="delete-btn p-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-200 transition shadow-sm inline-flex items-center justify-center"
+                                    data-id="{{ item['ID'] }}" data-name="{{ item['Name'] }}"
+                                    title="Hapus Pakar">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
                                 </button>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+                
+                <!-- Pagination Controls -->
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+                    <div id="table-showing-text">
+                        Menampilkan 0-0 dari 0 pakar
+                    </div>
+                    <div class="flex gap-1" id="table-pagination-buttons">
+                        <!-- Dynamic page buttons -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -267,7 +354,7 @@
                 <button onclick="closeDetailModal()"
                     class="text-gray-400 hover:text-gray-600 text-xl font-semibold focus:outline-none">&times;</button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
                 <div>
                     <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Nama Lengkap</label>
                     <p id="modal-name" class="text-lg font-extrabold text-blue-900 mt-0.5"></p>
@@ -292,6 +379,12 @@
                         Lengkap</label>
                     <div class="mt-1 bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm text-gray-700 leading-relaxed italic"
                         id="modal-description"></div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Riwayat Penyelesaian Kendala</label>
+                    <div id="modal-problems-container" class="space-y-3">
+                        <!-- Dimasukkan secara dinamis via JS -->
+                    </div>
                 </div>
             </div>
             <div class="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex justify-end">
@@ -354,6 +447,100 @@
         </div>
     </div>
 
+    <!-- Modal Riwayat Masalah & Profil Lengkap Pakar -->
+    <div id="expert-history-modal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden transform transition-all scale-95 opacity-0 duration-200"
+            id="history-modal-content">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900">Profil & Riwayat Penanganan Masalah</h3>
+                <button onclick="closeHistoryModal()"
+                    class="text-gray-400 hover:text-gray-600 text-xl font-semibold focus:outline-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
+                <!-- Profil Detail -->
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-4 items-start shadow-sm">
+                    <div id="hist-avatar" class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-base uppercase shrink-0">
+                        PK
+                    </div>
+                    <div>
+                        <h4 id="hist-name" class="text-base font-extrabold text-blue-900">-</h4>
+                        <p id="hist-department" class="text-xs font-semibold text-gray-600 mt-0.5">-</p>
+                        <p id="hist-email" class="text-xs text-blue-700 font-mono mt-0.5">-</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Keahlian Umum</label>
+                    <div id="hist-description" class="text-xs text-gray-700 leading-relaxed italic bg-gray-50 p-3 rounded-lg border mt-1"></div>
+                </div>
+
+                <!-- Daftar Riwayat Masalah -->
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Riwayat Penyelesaian Kendala</label>
+                    <div id="hist-problems-container" class="space-y-4">
+                        <!-- Masalah dan solusi dimasukkan secara dinamis -->
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex justify-end">
+                <button onclick="closeHistoryModal()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2 rounded-lg transition shadow-sm">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Kelola Riwayat Masalah oleh Pakar -->
+    <div id="manage-problems-modal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden transform transition-all scale-95 opacity-0 duration-200"
+            id="manage-problems-content">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900">Kelola Riwayat Masalah & Solusi</h3>
+                <button onclick="closeManageProblemsModal()"
+                    class="text-gray-400 hover:text-gray-600 text-xl font-semibold focus:outline-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- Identitas Pakar -->
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm font-semibold text-blue-900">
+                    Pakar: <span id="m-expert-name" class="font-extrabold text-blue-950">-</span>
+                </div>
+
+                <!-- Form Tambah/Ubah Masalah -->
+                <form id="problem-form" class="space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <input type="hidden" id="p-expert-id" value="">
+                    <input type="hidden" id="p-problem-id" value="">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-xs font-bold mb-1">Masalah / Kendala yang Dihadapi</label>
+                            <textarea id="p-problem" rows="3" required placeholder="Tulis deskripsi kendala..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-xs font-bold mb-1">Solusi / Penyelesaian Masalah</label>
+                            <textarea id="p-solution" rows="3" required placeholder="Tulis deskripsi solusi..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500"></textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" id="btn-cancel-problem-edit" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs px-4 py-2.5 rounded-lg transition" onclick="resetProblemForm()">Batal</button>
+                        <button type="submit" id="btn-save-problem" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-lg transition shadow-sm">Simpan</button>
+                    </div>
+                </form>
+
+                <!-- List Riwayat Masalah -->
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Daftar Penanganan Masalah Saat Ini</h4>
+                    <div class="overflow-y-auto max-h-[220px] border border-gray-200 rounded-lg divide-y divide-gray-100 bg-white" id="m-problems-list">
+                        <!-- Dimasukkan via JS -->
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex justify-end">
+                <button onclick="closeManageProblemsModal()"
+                    class="bg-gray-600 hover:bg-gray-700 text-white font-bold text-xs px-5 py-2 rounded-lg transition shadow-sm">Selesai</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function switchTab(targetTab) {
             const searchTabElement = document.getElementById('tab-search');
@@ -374,38 +561,52 @@
             }
         }
 
-        function triggerAIGenerator() {
-            const selectedDepartment = document.getElementById('form-department').value;
-            const inputKeywords = document.getElementById('ai-keywords').value;
-
-            if (inputKeywords.trim() === "") {
-                alert("Masukkan minimal satu atau dua kata kunci terlebih dahulu!");
-                return;
-            }
-
-            const requestForm = new FormData();
-            requestForm.append('divisi', selectedDepartment);
-            requestForm.append('keywords', inputKeywords);
-
-            fetch('/generate-ai', {
-                method: 'POST',
-                body: requestForm
-            })
-                .then(response => response.json())
-                .then(responseData => {
-                    if (responseData.status === 'success') {
-                        document.getElementById('form-description').value = responseData.text;
-                    }
-                })
-                .catch(errorLog => console.error('Gagal memproses pembuatan deskripsi otomatis:', errorLog));
-        }
-
-        function openDetailModal(name, department, email, score, description) {
+        function openDetailModal(id, name, department, email, score, description) {
             document.getElementById('modal-name').innerText = name;
             document.getElementById('modal-department').innerText = department;
             document.getElementById('modal-email').innerText = email;
             document.getElementById('modal-score').innerText = score;
-            document.getElementById('modal-description').innerText = `"${description}"`;
+            document.getElementById('modal-description').innerText = description ? `"${description}"` : "Tidak ada deskripsi keahlian.";
+
+            const container = document.getElementById('modal-problems-container');
+            container.innerHTML = '<p class="text-xs text-gray-500 italic p-3 text-center bg-gray-50 rounded-lg border">Memuat riwayat...</p>';
+
+            if (id) {
+                fetch(`/get-problems/${id}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            container.innerHTML = '';
+                            if (data.problems.length === 0) {
+                                container.innerHTML = '<p class="text-xs text-gray-500 italic p-3 text-center bg-gray-50 rounded-lg border border-dashed">Belum ada riwayat penyelesaian kendala oleh pakar ini.</p>';
+                                return;
+                            }
+                            data.problems.forEach(item => {
+                                const card = document.createElement('div');
+                                card.className = "bg-gray-50 rounded-lg p-3 border border-gray-200 space-y-2";
+                                card.innerHTML = `
+                                    <div>
+                                        <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">Kendala / Masalah</span>
+                                        <p class="text-xs font-semibold text-gray-800">${item.problem}</p>
+                                    </div>
+                                    <div class="pt-1.5 border-t border-dashed border-gray-200">
+                                        <span class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Solusi / Penyelesaian</span>
+                                        <p class="text-xs text-gray-700">${item.solution}</p>
+                                    </div>
+                                `;
+                                container.appendChild(card);
+                            });
+                        } else {
+                            container.innerHTML = '<p class="text-xs text-red-500 p-3 text-center bg-gray-50 rounded-lg border">Gagal memuat riwayat.</p>';
+                        }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        container.innerHTML = '<p class="text-xs text-red-500 p-3 text-center bg-gray-50 rounded-lg border">Terjadi kesalahan sistem.</p>';
+                    });
+            } else {
+                container.innerHTML = '<p class="text-xs text-gray-500 italic p-3 text-center bg-gray-50 rounded-lg border border-dashed">Belum ada riwayat penyelesaian kendala oleh pakar ini.</p>';
+            }
 
             const containerModal = document.getElementById('detail-modal');
             const wrapperContent = document.getElementById('modal-content');
@@ -490,16 +691,256 @@
             });
         }
 
+        // MODAL RIWAYAT MASALAH (EXPERT HISTORY MODAL)
+        function openHistoryModal(name, department, email, description, historyList) {
+            document.getElementById('hist-name').innerText = name;
+            document.getElementById('hist-department').innerText = department;
+            document.getElementById('hist-email').innerText = email;
+            document.getElementById('hist-description').innerText = description ? `"${description}"` : "Tidak ada deskripsi keahlian.";
+            document.getElementById('hist-avatar').innerText = name ? name.substring(0, 2).toUpperCase() : "PK";
+
+            const container = document.getElementById('hist-problems-container');
+            container.innerHTML = '';
+
+            if (historyList && historyList.length > 0) {
+                historyList.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = "bg-gray-50 rounded-lg p-3.5 border border-gray-200 space-y-2";
+                    card.innerHTML = `
+                        <div>
+                            <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">Kendala / Masalah</span>
+                            <p class="text-xs font-semibold text-gray-800">${item.Problem || item.problem}</p>
+                        </div>
+                        <div class="pt-1.5 border-t border-dashed border-gray-200">
+                            <span class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Solusi / Penyelesaian</span>
+                            <p class="text-xs text-gray-700">${item.Solution || item.solution}</p>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } else {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-4 bg-gray-50 rounded-lg border border-dashed">Belum ada riwayat penyelesaian kendala oleh pakar ini.</p>`;
+            }
+
+            const modal = document.getElementById('expert-history-modal');
+            const content = document.getElementById('history-modal-content');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeHistoryModal() {
+            const modal = document.getElementById('expert-history-modal');
+            const content = document.getElementById('history-modal-content');
+
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        // KELOLA RIWAYAT MASALAH MODAL (MANAGE PROBLEMS MODAL)
+        function openManageProblemsModal(expertId, expertName) {
+            document.getElementById('p-expert-id').value = expertId;
+            document.getElementById('m-expert-name').innerText = expertName;
+            
+            resetProblemForm();
+            loadProblemsList(expertId);
+
+            const modal = document.getElementById('manage-problems-modal');
+            const content = document.getElementById('manage-problems-content');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeManageProblemsModal() {
+            const modal = document.getElementById('manage-problems-modal');
+            const content = document.getElementById('manage-problems-content');
+
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function loadProblemsList(expertId) {
+            const container = document.getElementById('m-problems-list');
+            container.innerHTML = '<p class="text-xs text-gray-500 italic p-4 text-center">Memuat riwayat...</p>';
+
+            fetch(`/get-problems/${expertId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        container.innerHTML = '';
+                        if (data.problems.length === 0) {
+                            container.innerHTML = '<p class="text-xs text-gray-500 italic p-4 text-center">Belum ada riwayat masalah.</p>';
+                            return;
+                        }
+                        data.problems.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = "p-3 flex justify-between items-start gap-4 text-xs hover:bg-gray-50 border-b border-gray-100 last:border-0 bg-white";
+                            div.innerHTML = `
+                                <div class="flex-1 space-y-1">
+                                    <div class="font-medium text-gray-800"><span class="font-bold text-red-500">Masalah:</span> ${item.problem}</div>
+                                    <div class="text-gray-600"><span class="font-bold text-green-600">Solusi:</span> ${item.solution}</div>
+                                </div>
+                                <div class="flex gap-2.5 shrink-0 pt-0.5">
+                                    <button type="button" class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded transition" onclick="editProblemRecord('${item.id}', '${escapeHtml(item.problem)}', '${escapeHtml(item.solution)}')" title="Edit Masalah">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded transition" onclick="deleteProblemRecord('${item.id}')" title="Hapus Masalah">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        });
+                    } else {
+                        container.innerHTML = '<p class="text-xs text-red-500 p-4 text-center">Gagal memuat riwayat.</p>';
+                    }
+                })
+                .catch(e => {
+                    console.error(e);
+                    container.innerHTML = '<p class="text-xs text-red-500 p-4 text-center">Terjadi kesalahan sistem.</p>';
+                });
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+         function editProblemRecord(id, problem, solution) {
+            document.getElementById('p-problem-id').value = id;
+            document.getElementById('p-problem').value = problem;
+            document.getElementById('p-solution').value = solution;
+            
+            document.getElementById('btn-save-problem').innerText = "Simpan";
+            document.getElementById('btn-cancel-problem-edit').classList.remove('hidden');
+        }
+
+        function resetProblemForm() {
+            document.getElementById('p-problem-id').value = '';
+            document.getElementById('p-problem').value = '';
+            document.getElementById('p-solution').value = '';
+            
+            document.getElementById('btn-save-problem').innerText = "Simpan";
+            document.getElementById('btn-cancel-problem-edit').classList.add('hidden');
+        }
+
+        function deleteProblemRecord(problemId) {
+            Swal.fire({
+                title: "Hapus Riwayat Ini?",
+                text: "Riwayat masalah ini akan dihapus secara permanen.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#ef4444",
+                cancelButtonColor: "#3b82f6",
+                confirmButtonText: "Ya, Hapus!",
+                cancelButtonText: "Batal"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: "Memproses...",
+                        text: "Menghapus data dan me-retrain model AI...",
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    fetch(`/delete-problem/${problemId}`, { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            Swal.close();
+                            if (data.status === 'success') {
+                                Swal.fire("Berhasil", data.message, "success");
+                                loadProblemsList(document.getElementById('p-expert-id').value);
+                            } else {
+                                Swal.fire("Gagal", data.message, "error");
+                            }
+                        })
+                        .catch(e => {
+                            Swal.close();
+                            Swal.fire("Gagal", "Terjadi kesalahan sistem.", "error");
+                        });
+                }
+            });
+        }
+
+        // FORM SUBMIT HANDLER UNTUK PROBLEM
+        document.addEventListener('DOMContentLoaded', function () {
+            const problemForm = document.getElementById('problem-form');
+            if (problemForm) {
+                problemForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const expertId = document.getElementById('p-expert-id').value;
+                    const problemId = document.getElementById('p-problem-id').value;
+                    const problem = document.getElementById('p-problem').value;
+                    const solution = document.getElementById('p-solution').value;
+
+                    const url = problemId ? `/edit-problem/${problemId}` : `/add-problem/${expertId}`;
+                    
+                    Swal.fire({
+                        title: "Menyimpan Data...",
+                        text: "AI sedang melatih ulang model di background process. Harap tunggu.",
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    const formData = new FormData();
+                    formData.append('problem', problem);
+                    formData.append('solution', solution);
+
+                    fetch(url, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        Swal.close();
+                        if (data.status === 'success') {
+                            Swal.fire("Berhasil", data.message, "success");
+                            resetProblemForm();
+                            loadProblemsList(expertId);
+                        } else {
+                            Swal.fire("Gagal", data.message, "error");
+                        }
+                    })
+                    .catch(e => {
+                        Swal.close();
+                        Swal.fire("Gagal", "Terjadi kesalahan sistem.", "error");
+                    });
+                });
+            }
+        });
+
         // Delegasi event listener untuk menangani klik tombol secara aman tanpa inline onclick
         document.addEventListener('click', function (event) {
             const detailBtn = event.target.closest('.detail-btn');
             if (detailBtn) {
+                const id = detailBtn.getAttribute('data-id');
                 const name = detailBtn.getAttribute('data-name');
                 const department = detailBtn.getAttribute('data-department');
                 const email = detailBtn.getAttribute('data-email');
                 const score = detailBtn.getAttribute('data-score');
                 const description = detailBtn.getAttribute('data-description');
-                openDetailModal(name, department, email, score, description);
+                openDetailModal(id, name, department, email, score, description);
                 return;
             }
 
@@ -525,6 +966,25 @@
             const deleteAllBtn = event.target.closest('#delete-all-btn');
             if (deleteAllBtn) {
                 triggerDeleteAllConfirmation();
+                return;
+            }
+
+            const expertHistoryBtn = event.target.closest('.expert-history-btn');
+            if (expertHistoryBtn) {
+                const name = expertHistoryBtn.getAttribute('data-name');
+                const department = expertHistoryBtn.getAttribute('data-department');
+                const email = expertHistoryBtn.getAttribute('data-email');
+                const description = expertHistoryBtn.getAttribute('data-description');
+                const historyList = JSON.parse(expertHistoryBtn.getAttribute('data-history') || '[]');
+                openHistoryModal(name, department, email, description, historyList);
+                return;
+            }
+
+            const manageProblemsBtn = event.target.closest('.manage-problems-btn');
+            if (manageProblemsBtn) {
+                const id = manageProblemsBtn.getAttribute('data-id');
+                const name = manageProblemsBtn.getAttribute('data-name');
+                openManageProblemsModal(id, name);
                 return;
             }
         });
@@ -580,6 +1040,152 @@
                     });
                 });
             }
+            
+            // Logika Pencarian & Paginasi Tabel Database Pakar Aktif
+            const allExperts = {{ experts | tojson | safe }};
+            let filteredExperts = [...allExperts];
+            let currentPage = 1;
+            const itemsPerPage = 10;
+
+            function renderExpertsTable() {
+                const tableBody = document.getElementById('experts-table-body');
+                if (!tableBody) return;
+
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, filteredExperts.length);
+                const pageItems = filteredExperts.slice(startIndex, endIndex);
+
+                tableBody.innerHTML = '';
+                
+                if (pageItems.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-500 italic bg-white">
+                                Tidak ada data pakar yang cocok dengan pencarian.
+                            </td>
+                        </tr>
+                    `;
+                    document.getElementById('table-showing-text').innerText = 'Menampilkan 0 dari 0 pakar';
+                    document.getElementById('table-pagination-buttons').innerHTML = '';
+                    return;
+                }
+
+                pageItems.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b hover:bg-gray-50';
+                    tr.innerHTML = `
+                        <td class="px-4 py-3 font-mono text-xs text-blue-600">${item.ID}</td>
+                        <td class="px-4 py-3 font-bold text-gray-900">${escapeHtml(item.Name)}</td>
+                        <td class="px-4 py-3 text-xs"><span class="bg-gray-200 text-gray-800 px-2 py-0.5 rounded">${escapeHtml(item.Department)}</span></td>
+                        <td class="px-4 py-3 text-xs truncate max-w-xs" title="${escapeHtml(item.Description)}">${escapeHtml(item.Description)}</td>
+                        <td class="px-4 py-3 text-xs text-center space-x-2.5 whitespace-nowrap">
+                            <button type="button"
+                                class="manage-problems-btn p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg border border-blue-200 transition shadow-sm inline-flex items-center justify-center"
+                                data-id="${item.ID}" data-name="${escapeHtml(item.Name)}"
+                                title="Kelola Riwayat Masalah">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
+                            </button>
+
+                            <button type="button"
+                                class="edit-btn p-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg border border-amber-200 transition shadow-sm inline-flex items-center justify-center"
+                                data-id="${item.ID}" data-name="${escapeHtml(item.Name)}"
+                                data-email="${escapeHtml(item.Email)}" data-department="${escapeHtml(item.Department)}"
+                                data-description="${escapeHtml(item.Description)}"
+                                title="Ubah Data Pakar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+
+                            <button type="button"
+                                class="delete-btn p-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-200 transition shadow-sm inline-flex items-center justify-center"
+                                data-id="${item.ID}" data-name="${escapeHtml(item.Name)}"
+                                title="Hapus Pakar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+                // Update text summary
+                document.getElementById('table-showing-text').innerText = `Menampilkan ${startIndex + 1}-${endIndex} dari ${filteredExperts.length} pakar`;
+                
+                // Update total badge
+                document.getElementById('table-total-badge').innerText = `Total: ${filteredExperts.length} Pakar`;
+
+                // Update pagination buttons
+                renderPaginationControls();
+            }
+
+            function renderPaginationControls() {
+                const container = document.getElementById('table-pagination-buttons');
+                container.innerHTML = '';
+
+                const totalPages = Math.ceil(filteredExperts.length / itemsPerPage);
+                if (totalPages <= 1) return;
+
+                // Tombol Sebelumnya
+                const prevBtn = document.createElement('button');
+                prevBtn.type = 'button';
+                prevBtn.className = `px-2.5 py-1 border rounded text-xs transition font-semibold ${currentPage === 1 ? 'text-gray-300 border-gray-100 bg-gray-50 cursor-not-allowed' : 'text-blue-600 border-blue-200 hover:bg-blue-50'}`;
+                prevBtn.innerText = 'Sebelumnya';
+                if (currentPage > 1) {
+                    prevBtn.onclick = () => {
+                        currentPage--;
+                        renderExpertsTable();
+                    };
+                }
+                container.appendChild(prevBtn);
+
+                // Angka Halaman
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.type = 'button';
+                    pageBtn.className = `px-2.5 py-1 border rounded text-xs transition font-semibold ${currentPage === i ? 'bg-blue-600 text-white border-blue-600' : 'text-blue-600 border-blue-200 hover:bg-blue-50'}`;
+                    pageBtn.innerText = i;
+                    pageBtn.onclick = () => {
+                        currentPage = i;
+                        renderExpertsTable();
+                    };
+                    container.appendChild(pageBtn);
+                }
+
+                // Tombol Berikutnya
+                const nextBtn = document.createElement('button');
+                nextBtn.type = 'button';
+                nextBtn.className = `px-2.5 py-1 border rounded text-xs transition font-semibold ${currentPage === totalPages ? 'text-gray-300 border-gray-100 bg-gray-50 cursor-not-allowed' : 'text-blue-600 border-blue-200 hover:bg-blue-50'}`;
+                nextBtn.innerText = 'Berikutnya';
+                if (currentPage < totalPages) {
+                    nextBtn.onclick = () => {
+                        currentPage++;
+                        renderExpertsTable();
+                    };
+                }
+                container.appendChild(nextBtn);
+            }
+
+            // Input Pencarian Tabel Event Listener
+            const tableSearchInput = document.getElementById('table-search');
+            if (tableSearchInput) {
+                tableSearchInput.addEventListener('input', (e) => {
+                    const searchVal = e.target.value.toLowerCase().trim();
+                    filteredExperts = allExperts.filter(item => {
+                        return (item.Name || '').toLowerCase().includes(searchVal) ||
+                               (item.Department || '').toLowerCase().includes(searchVal) ||
+                               (item.Description || '').toLowerCase().includes(searchVal);
+                    });
+                    currentPage = 1;
+                    renderExpertsTable();
+                });
+            }
+
+            // Render awal halaman
+            renderExpertsTable();
         });
     </script>
 
